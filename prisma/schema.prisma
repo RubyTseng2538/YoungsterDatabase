@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Name {
+  id               Int     @id @default(autoincrement())
+  email            String  @unique
+  name             String? 
+  events           Event[]
+  transactions     Transaction[] 
+  donationReceipts DonationReceipt[]
+  receipts         Receipt[]
+}
+
+model Event {
+  id               Int       @id @default(autoincrement())
+  eventName        String?
+  eventDate        DateTime
+  eventLocation    String?
+  fee              Int?
+  eventDeadline    DateTime
+  attendees        Name[]
+  transactions     Transaction[]
+  receipts         Receipt[]
+  donationReceipts DonationReceipt[]
+}
+
+model Transaction {
+  id              Int       @id @default(autoincrement())
+  entryDate       DateTime
+  transactionDate DateTime
+  attendee        Name      @relation(fields: [attendeeID], references: [id])
+  attendeeID      Int
+  event           Event     @relation(fields: [eventID], references: [id])
+  eventID         Int
+  paymentMethod   String?
+  amount          Float
+  receipt         Boolean
+  donation        Boolean
+}
+
+model DonationReceipt {
+  id              Int       @id @default(autoincrement())
+  user            Name      @relation(fields: [userID], references: [id])
+  userID          Int
+  donationDate    DateTime
+  paymentMethod   String?
+  event           Event?    @relation(fields: [eventID], references: [id])
+  eventID         Int?
+  amount          Float
+}
+
+model Receipt{
+  id              Int       @id @default(autoincrement())
+  user            Name      @relation(fields: [userID], references: [id])
+  userID          Int
+  payDate         DateTime
+  paymentMethod   String?
+  event           Event     @relation(fields: [eventID], references: [id])
+  eventID         Int
+  amount          Float
+}
