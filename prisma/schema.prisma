@@ -11,63 +11,54 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl =  env("DIRECT_URL")
 }
 
-model Name {
-  id               Int     @id @default(autoincrement())
-  email            String  @unique
-  name             String? 
-  events           Event[]
-  transactions     Transaction[] 
-  donationReceipts DonationReceipt[]
-  receipts         Receipt[]
+model Donor {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  name         String
+  events       Event[]
+  transactions Transaction[]
 }
 
 model Event {
-  id               Int       @id @default(autoincrement())
-  eventName        String?
-  eventDate        DateTime
-  eventLocation    String?
-  fee              Int?
-  eventDeadline    DateTime
-  attendees        Name[]
-  transactions     Transaction[]
-  receipts         Receipt[]
-  donationReceipts DonationReceipt[]
+  id            Int           @id @default(autoincrement())
+  eventName     String
+  eventDate     DateTime
+  eventLocation String?
+  fee           Float?
+  eventDeadline DateTime
+  attendees     Donor[]
+  transactions  Transaction[]
 }
 
 model Transaction {
-  id              Int       @id @default(autoincrement())
+  id              Int                 @id @default(autoincrement())
   entryDate       DateTime
   transactionDate DateTime
-  attendee        Name      @relation(fields: [attendeeID], references: [id])
-  attendeeID      Int
-  event           Event     @relation(fields: [eventID], references: [id])
-  eventID         Int
-  paymentMethod   String?
-  amount          Float
-  receipt         Boolean
-  donation        Boolean
-}
-
-model DonationReceipt {
-  id              Int       @id @default(autoincrement())
-  user            Name      @relation(fields: [userID], references: [id])
-  userID          Int
-  donationDate    DateTime
-  paymentMethod   String?
-  event           Event?    @relation(fields: [eventID], references: [id])
+  donor           Donor               @relation(fields: [donorID], references: [id])
+  donorID         Int
+  event           Event?              @relation(fields: [eventID], references: [id])
   eventID         Int?
+  paymentMethod   PaymentMethod
   amount          Float
+  receipt         TransactionReceipt? @relation(fields: [receiptID], references: [receiptNumber])
+  receiptID       String?             @unique
+  donation        Boolean
+  note            String?
 }
 
-model Receipt{
-  id              Int       @id @default(autoincrement())
-  user            Name      @relation(fields: [userID], references: [id])
-  userID          Int
-  payDate         DateTime
-  paymentMethod   String?
-  event           Event     @relation(fields: [eventID], references: [id])
-  eventID         Int
-  amount          Float
+model TransactionReceipt {
+  receiptNumber String       @id
+  transaction   Transaction?
+  email         String
+  name          String
+  sendDate      DateTime
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  ZELLE
 }
