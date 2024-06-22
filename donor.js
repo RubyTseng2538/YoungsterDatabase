@@ -81,6 +81,17 @@ async function addEvents(id, eventID){
     })
 }
 
+async function removeEvents(eventID, userID){
+    const donor = await prisma.donor.update({
+        where: {
+            id: userID
+        },
+        data: {
+            events: {disconnect: {id: eventID}}
+        }
+    })
+}
+
 //delete
 async function deleteDonor(email){
     const donor = await prisma.donor.delete({
@@ -90,7 +101,4 @@ async function deleteDonor(email){
     })
 }
 
-getDonorsByEvent(1).then((donors)=>{
-    console.log(donors)
-});
 

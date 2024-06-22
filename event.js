@@ -71,6 +71,17 @@ async function addAttendees(id, userID){
     })
 }
 
+async function removeAttendees(eventID, userID){
+    const event = await prisma.event.update({
+        where: {
+            id: eventID
+        },
+        data: {
+            attendees: {disconnect: {id: userID}}
+        }
+    })
+}
+
 //delete
 async function deleteEvent(id){
     const event = await prisma.event.delete({
@@ -80,6 +91,4 @@ async function deleteEvent(id){
     })
 }
 
-getEventsByDonor(1).then((events)=>{
-    console.log(events)
-})
+
