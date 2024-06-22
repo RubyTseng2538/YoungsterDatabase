@@ -40,6 +40,19 @@ async function getDonorsByName(name){
     return donors
 }
 
+async function getDonorsByEvent(id){
+    const donors = await prisma.donor.findMany({
+        where:{
+            events:{
+                some:{
+                    id: id
+                },
+            },
+        },
+    })
+    return donors;
+}
+
 async function getAllDonors(){
     const donors = await prisma.donor.findMany();
     return donors;
@@ -57,6 +70,17 @@ async function updateDonor(email, data){
     return donor;
 }
 
+async function addEvents(id, eventID){
+    const event = await prisma.donor.update({
+        where: {
+            id: id
+        },
+        data: {
+            events: {connect: {id: eventID}}
+        }
+    })
+}
+
 //delete
 async function deleteDonor(email){
     const donor = await prisma.donor.delete({
@@ -65,4 +89,8 @@ async function deleteDonor(email){
         }
     })
 }
+
+getDonorsByEvent(1).then((donors)=>{
+    console.log(donors)
+});
 

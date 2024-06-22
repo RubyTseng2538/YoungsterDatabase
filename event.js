@@ -30,6 +30,19 @@ async function getEventsByName(name){
     return events
 }
 
+async function getEventsByDonor(id){
+    const events = await prisma.event.findMany({
+        where:{
+            attendees:{
+                some:{
+                    id: id
+                },
+            },
+        },
+    })
+    return events;
+}
+
 async function getAllEvents(){
     const events = await prisma.event.findMany();
     return events;
@@ -47,6 +60,17 @@ async function updateEvent(id, data){
     return event;
 }
 
+async function addAttendees(id, userID){
+    const event = await prisma.event.update({
+        where: {
+            id: id
+        },
+        data: {
+            attendees: {connect: {id: userID}}
+        }
+    })
+}
+
 //delete
 async function deleteEvent(id){
     const event = await prisma.event.delete({
@@ -55,3 +79,7 @@ async function deleteEvent(id){
         }
     })
 }
+
+getEventsByDonor(1).then((events)=>{
+    console.log(events)
+})
