@@ -13,16 +13,19 @@ async function createUser(email, name) {
     return donor;
 }
 
-async function createMany(data){
-    const donors = await prisma.donor.createManyAndReturn({
-        data: data
-    })
-    return donors;
+//read
+async function getDonorById(id){
+    const donor = await prisma.donor.findUnique({
+        where:{
+            id: id
+           }
+    });
+    return donor
 }
 
 
-//read
-async function getDonor(email){
+//combine email and name contain
+async function getDonorByEmail(email){
     const donor = await prisma.donor.findUnique({
         where:{
             email: email
@@ -31,6 +34,8 @@ async function getDonor(email){
     return donor
 }
 
+
+//contain 
 async function getDonorsByName(name){
     const donors = await prisma.donor.findMany({
         where:{
@@ -102,3 +107,15 @@ async function deleteDonor(email){
 }
 
 
+module.exports={
+    createUser,
+    getAllDonors,
+    getDonorByEmail,
+    getDonorById,
+    getDonorsByEvent,
+    getDonorsByName,
+    updateDonor,
+    addEvents,
+    removeEvents,
+    deleteDonor
+}
