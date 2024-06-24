@@ -25,22 +25,19 @@ async function getDonorById(id){
 
 
 //combine email and name contain
-async function getDonorByEmail(email){
-    const donor = await prisma.donor.findUnique({
-        where:{
-            email: email
-           }
-    });
-    return donor
-}
-
-
-//contain 
-async function getDonorsByName(name){
+async function getDonorByString(string){
     const donors = await prisma.donor.findMany({
-        where:{
-            name: name
-        }
+        where:
+            {OR: [{
+                email: {
+                    contains: string
+                }
+            },{
+                name: {
+                    contains: string
+                }
+            }
+        ]}
     });
     return donors
 }
@@ -65,10 +62,10 @@ async function getAllDonors(){
 
 
 //update
-async function updateDonor(email, data){
+async function updateDonor(id, data){
     const donor = await prisma.donor.update({
         where:{
-            email: email
+            id: id
         },
         data: data
     })
@@ -98,10 +95,10 @@ async function removeEvents(eventID, userID){
 }
 
 //delete
-async function deleteDonor(email){
+async function deleteDonor(id){
     const donor = await prisma.donor.delete({
         where:{
-            email: email
+            id: id
         }
     })
 }
@@ -110,10 +107,9 @@ async function deleteDonor(email){
 module.exports={
     createUser,
     getAllDonors,
-    getDonorByEmail,
+    getDonorByString,
     getDonorById,
     getDonorsByEvent,
-    getDonorsByName,
     updateDonor,
     addEvents,
     removeEvents,

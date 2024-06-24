@@ -2,7 +2,7 @@
 
 const {Router} = require('express');
 const router = new Router();
-const {getAllDonors, getDonorById} = require('../CRUD/donor');
+const {getDonorByString, getDonorById, getAllDonors, deleteDonor, updateDonor, createUser} = require('../CRUD/donor');
 function isInt(value) {
     var x = parseFloat(value);
     return !isNaN(value) && (x | 0) === x;
@@ -20,8 +20,13 @@ const donorMiddleware = (req,res,next) => {
 //get list of donor & get filter name | email
  router.get('/donors',async (req,res)=>{
     const {searchText} = req.query;
-    console.log(searchText);
-    res.send(await getAllDonors());
+    console.log(req.query);
+    if(!searchText){
+      res.send(await getAllDonors());
+    }else{
+      res.send(await getDonorByString(searchText));
+    }
+    
  })
 
  //get filter id
@@ -31,11 +36,28 @@ const donorMiddleware = (req,res,next) => {
  })
 
  //create donor
+ router.post("/donors", async(req, res)=>{
+   let email= req.query.email;
+   let name= req.query.name;
+   res.json(await createUser(email, name))
+ })
 
  //update donor
+ router.put('/donors/:id', donorMiddleware, async(req, res)=>{
+   const id = req.params.id;
+   let data = {
+      email: req.query.email,
+      name: req.query.name
+   }
+   console.log(data);
+   res.json(await updateDonor(id, data))
+ })
 
  //delete donor
-
+ router.delete('/donors/:id', donorMiddleware, async(req, res)=>{
+   const id = req.params.id;
+   res.json(await deleteDonor(id))
+ })
 
 
  module.exports=router;
