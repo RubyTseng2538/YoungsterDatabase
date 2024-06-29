@@ -16,6 +16,7 @@ const validateEmail = (email) => {
       );
   };
 
+
 const donorMiddleware = (req,res,next) => {
     const id = req.params.id;
     if(!id || isNaN(id) || !isInt(id)){
@@ -48,7 +49,7 @@ const donorMiddleware = (req,res,next) => {
    let email= req.query.email;
    let name= req.query.name;
    if(!name || !email || !validateEmail(email)){
-    res.send(400, "invalid entry");
+    res.status(400).send('invalid entry')
    }else{
     res.json(await createUser(email, name))
    }
