@@ -8,6 +8,14 @@ function isInt(value) {
     return !isNaN(value) && (x | 0) === x;
   }
 
+const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
+
 const donorMiddleware = (req,res,next) => {
     const id = req.params.id;
     if(!id || isNaN(id) || !isInt(id)){
@@ -39,7 +47,11 @@ const donorMiddleware = (req,res,next) => {
  router.post("/donors", async(req, res)=>{
    let email= req.query.email;
    let name= req.query.name;
-   res.json(await createUser(email, name))
+   if(!name || !email || !validateEmail(email)){
+    res.send(400, "invalid entry");
+   }else{
+    res.json(await createUser(email, name))
+   }
  })
 
  //update donor

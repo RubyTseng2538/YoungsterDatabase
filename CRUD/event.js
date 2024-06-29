@@ -43,6 +43,28 @@ async function getEventsByDonor(id){
     return events;
 }
 
+async function getEventsByDateRange(date1, date2){
+    return await prisma.event.findMany({
+        where: {
+          eventDate: {
+            lte: new Date(date2),
+            get: new Date(date1),
+          },
+        },
+      });
+}
+
+async function getEventsByDeadlineRange(date1, date2){
+    return await prisma.event.findMany({
+        where: {
+          eventDeadline: {
+            lte: new Date(date2),
+            get: new Date(date1),
+          },
+        },
+      });
+}
+
 async function getAllEvents(){
     const events = await prisma.event.findMany();
     return events;

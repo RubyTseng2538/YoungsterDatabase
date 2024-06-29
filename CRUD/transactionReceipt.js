@@ -21,11 +21,19 @@ async function getReceipt(receiptNumber){
     return receipt
 }
 
-async function getReceiptsByEmail(email){
+async function getReceiptsByString(string){
     const receipts = await prisma.transactionReceipt.findMany({
-        where:{
-            email: email
-        }
+        where:
+            {OR: [{
+                email: {
+                    contains: string
+                }
+            },{
+                name: {
+                    contains: string
+                }
+            }
+        ]}
     });
     return receipts
 }
@@ -35,18 +43,6 @@ async function getAllReceipts(){
     return receipts;
 }
 
-
-//update
-// async function updateEvent(id, data){
-//     const event = await prisma.event.update({
-//         where:{
-//             id: id
-//         },
-//         data: data
-//     })
-//     return event;
-// }
-
 //delete
 async function deleteReceipt(receiptNumber){
     const receipt = await prisma.transactionReceipt.delete({
@@ -54,4 +50,12 @@ async function deleteReceipt(receiptNumber){
             receiptNumber: receiptNumber
         }
     })
+}
+
+module.exports={
+    createReceipt,
+    getReceipt,
+    getReceiptsByString,
+    getAllReceipts,
+    deleteReceipt
 }

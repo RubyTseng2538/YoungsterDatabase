@@ -1,11 +1,18 @@
 const { PrismaClient } = require("@prisma/client");
 
+const {} = require('./transactionReceipt');
+
 const prisma = new PrismaClient();
 
 //create
-async function createTransaction(data) {
+async function createTransaction(data, receiptData) {
     const transaction = await prisma.transaction.create({
-      data: data
+      data: data,
+      receipt:{
+        create:{
+            data: receiptData
+        }
+      }
     });
     return transaction;
 }
@@ -21,14 +28,50 @@ async function getTransaction(id){
     return transaction
 }
 
-// async function getEventsByName(name){
-//     const events = await prisma.event.findMany({
-//         where:{
-//             eventName: name
-//         }
-//     });
-//     return events
-// }
+async function getTransactionByDonor(id){
+    const transactions = await prisma.transaction.findMany({
+        where:{
+            donorID: id
+        },
+    })
+    return transactions;
+}
+
+async function getTransactionByEvent(id){
+    const transactions = await prisma.transaction.findMany({
+        where:{
+            eventID: id
+        },
+    })
+    return transactions;
+}
+
+async function getTransactionByPaymentMethod(paymentMethod){
+    const transactions = await prisma.transaction.findMany({
+        where:{
+            paymentMethod: paymentMethod
+        },
+    })
+    return transactions;
+}
+
+async function getAllDonationTransaction(){
+    const transactions = await prisma.transaction.findMany({
+        where:{
+            donation: true
+        },
+    })
+    return transactions;
+}
+
+async function getTransactionByNote(note){
+    const transactions = await prisma.transaction.findMany({
+        where:{
+            note: {contains: note}
+        },
+    })
+    return transactions;
+}
 
 async function getAllTransactions(){
     const transactions = await prisma.transaction.findMany();
