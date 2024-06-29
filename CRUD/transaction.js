@@ -1,6 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 
-const {} = require('./transactionReceipt');
+const { deleteReceipt } = require('./transactionReceipt');
 
 const prisma = new PrismaClient();
 
@@ -94,7 +94,22 @@ async function getAllTransactions(){
 async function deleteTransaction(id){
     const transaction = await prisma.transaction.delete({
         where:{
-            id: id
+            id: id,
         }
     })
+    deleteReceipt(transaction.receiptID);
+
+    return transaction;
+}
+
+module.exports ={
+    createTransaction,
+    getTransaction,
+    getAllDonationTransaction,
+    getAllTransactions,
+    getTransactionByDonor,
+    getTransactionByEvent,
+    getTransactionByNote,
+    getTransactionByPaymentMethod,
+    deleteTransaction
 }

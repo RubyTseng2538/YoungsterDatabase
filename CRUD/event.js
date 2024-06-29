@@ -24,7 +24,7 @@ async function getEvent(id){
 async function getEventsByName(name){
     const events = await prisma.event.findMany({
         where:{
-            eventName: name
+            eventName: {contains: name}
         }
     });
     return events
@@ -113,4 +113,16 @@ async function deleteEvent(id){
     })
 }
 
-
+module.exports={
+    createEvent,
+    getAllEvents,
+    getEvent,
+    getEventsByDateRange,
+    getEventsByDeadlineRange,
+    getEventsByDonor,
+    getEventsByName,
+    updateEvent,
+    addAttendees,
+    removeAttendees,
+    deleteEvent
+}
