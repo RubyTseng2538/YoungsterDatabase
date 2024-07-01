@@ -1,0 +1,1 @@
+//API authorization (flexible permission addition)
