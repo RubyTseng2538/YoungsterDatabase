@@ -14,6 +14,14 @@ datasource db {
   directUrl =  env("DIRECT_URL")
 }
 
+model User{
+  id              String @id//google id
+  name            String
+  email           String
+  permisson       Roles
+  eventsInCharge  Event[]
+}
+
 model Donor {
   id           Int           @id @default(autoincrement())
   email        String        @unique
@@ -29,6 +37,7 @@ model Event {
   eventLocation String?
   fee           Float?
   eventDeadline DateTime
+  eventCoordinators User[]
   attendees     Donor[]
   transactions  Transaction[]
 }
@@ -61,4 +70,10 @@ enum PaymentMethod {
   CASH
   CHECK
   ZELLE
+}
+
+enum Roles {
+    ADMIN
+    AUDITOR
+    EVENTCOORDINATOR
 }

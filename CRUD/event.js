@@ -24,7 +24,8 @@ async function getEvent(id){
 async function getEventsByName(name){
     const events = await prisma.event.findMany({
         where:{
-            eventName: {contains: name}
+            eventName: {contains: name, mode: 'insensitive'},
+            
         }
     });
     return events

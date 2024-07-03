@@ -30,11 +30,13 @@ async function getDonorByString(string){
         where:
             {OR: [{
                 email: {
-                    contains: string
+                    contains: string,
+                    mode: 'insensitive'
                 }
             },{
                 name: {
-                    contains: string
+                    contains: string,
+                    mode: 'insensitive'
                 }
             }
         ]}
