@@ -49,7 +49,7 @@ async function getEventsByDateRange(date1, date2){
         where: {
           eventDate: {
             lte: new Date(date2),
-            get: new Date(date1),
+            gte: new Date(date1),
           },
         },
       });
@@ -60,7 +60,7 @@ async function getEventsByDeadlineRange(date1, date2){
         where: {
           eventDeadline: {
             lte: new Date(date2),
-            get: new Date(date1),
+            gte: new Date(date1),
           },
         },
       });
@@ -92,6 +92,7 @@ async function addAttendees(id, userID){
             attendees: {connect: {id: userID}}
         }
     })
+    return event
 }
 
 async function removeAttendees(eventID, userID){
@@ -103,6 +104,7 @@ async function removeAttendees(eventID, userID){
             attendees: {disconnect: {id: userID}}
         }
     })
+    return event
 }
 
 //delete

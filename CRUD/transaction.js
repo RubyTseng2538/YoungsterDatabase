@@ -1,4 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, PaymentMethod } = require("@prisma/client");
 
 const { deleteReceipt } = require('./transactionReceipt');
 
@@ -6,15 +6,14 @@ const prisma = new PrismaClient();
 
 //create
 async function createTransaction(data, receiptData) {
+    const receipt = await prisma.transactionReceipt.create({
+        data: receiptData  
+    })
     const transaction = await prisma.transaction.create({
       data: data,
-      receipt:{
-        create:{
-            data: receiptData
-        }
-      }
     });
-    return transaction;
+
+    return transaction, receipt;
 }
 
 
@@ -44,6 +43,28 @@ async function getTransactionByEvent(id){
         },
     })
     return transactions;
+}
+
+async function getTransactionByEntryDate(date1, date2){
+    return await prisma.transaction.findMany({
+        where: {
+          entryDate: {
+            lte: new Date(date2),
+            gte: new Date(date1),
+          },
+        },
+      });
+}
+
+async function getTransactionByTransactionDate(date1, date2){
+    return await prisma.transaction.findMany({
+        where: {
+          transactionDate: {
+            lte: new Date(date2),
+            gte: new Date(date1),
+          },
+        },
+      });
 }
 
 async function getTransactionByPaymentMethod(paymentMethod){
@@ -111,5 +132,7 @@ module.exports ={
     getTransactionByEvent,
     getTransactionByNote,
     getTransactionByPaymentMethod,
+    getTransactionByEntryDate,
+    getTransactionByTransactionDate,
     deleteTransaction
 }

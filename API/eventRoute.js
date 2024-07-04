@@ -2,7 +2,8 @@ const {Router} = require('express');
 const bodyParser = require('body-parser');
 const router = new Router();
 
-const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent } = require('../CRUD/event');
+const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent, addAttendees, removeAttendees, getEventsByDateRange, getEventsByDeadlineRange, getEventsByDonor } = require('../CRUD/event');
+const { getDonorById } = require('../CRUD/donor');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
 
@@ -17,6 +18,12 @@ const validateDate = (Date) => {
       );
   };
 
+const validateDate2 = (Date)=>{
+  return String(Date).match(
+    /^(0[1-9]|1[1,2])(\/|-)(0[1-9]|[12][0-9]|3[01])(\/|-)(19|20)\d{2}$/
+  );
+}
+
 
 const eventMiddleware = (req,res,next) => {
     const id = req.params.id;
@@ -29,12 +36,18 @@ const eventMiddleware = (req,res,next) => {
 
 //get list of donor & get filter name | email
 router.get('/events',async (req,res)=>{
-    const {searchText} = req.query;
+    const {searchText, DateOne, DateTwo, DeadlineOne, DeadlineTwo, DonorID} = req.query;
     console.log(req.query);
-    if(!searchText){
-      res.send(await getAllEvents());
-    }else{
+    if(searchText){
       res.send(await getEventsByName(searchText));
+    }else if(DateOne&&DateTwo&&validateDate2(DateOne)&&validateDate2(DateTwo)){
+      res.send(await getEventsByDateRange(DateOne, DateTwo));
+    }else if(DeadlineOne&&DeadlineTwo&&validateDate2(DeadlineOne)&&validateDate2(DeadlineTwo)){
+      res.send(await getEventsByDeadlineRange(DeadlineOne, DeadlineTwo));
+    }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
+      res.send(await getEventsByDonor(parseInt(DonorID)))
+    }else{
+      res.send(await getAllEvents());
     }
     
  })
@@ -82,6 +95,26 @@ router.get('/events',async (req,res)=>{
    }
    console.log(entry);
    res.json(await updateEvent(id, entry));
+ })
+
+ router.put('/events/addAttendees/:id', eventMiddleware, urlencodedParser, async(req,res)=>{
+  const id = req.params.id;
+  let data = req.body;
+  if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
+    res.json(await addAttendees(id, parseInt(data.userID)))
+  }else{
+    res.status(400).send('invalid entry');
+  }
+ })
+
+ router.put('/events/removeAttendees/:id', eventMiddleware, urlencodedParser, async(req,res)=>{
+  const id = req.params.id;
+  let data = req.body;
+  if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
+    res.json(await removeAttendees(id, parseInt(data.userID)))
+  }else{
+    res.status(400).send('invalid entry');
+  }
  })
 
  //delete donor
