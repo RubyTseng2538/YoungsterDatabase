@@ -3,7 +3,9 @@
 const {Router} = require('express');
 const bodyParser = require('body-parser');
 const router = new Router();
-const {getDonorByString, getDonorById, getAllDonors, deleteDonor, updateDonor, createUser} = require('../CRUD/donor');
+const {getDonorByString, getDonorById, getAllDonors, deleteDonor, updateDonor, createDonor} = require('../CRUD/donor');
+const { isAuthenticated } = require('./APIAuthentication');
+const { checkPermission } = require('./APIAuthorization');
  
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
@@ -31,7 +33,7 @@ const donorMiddleware = (req,res,next) => {
 }
 
 //get list of donor & get filter name | email
- router.get('/donors',async (req,res)=>{
+ router.get('/donors', isAuthenticated, checkPermission, async (req,res)=>{
     const {searchText} = req.query;
     console.log(req.query);
     if(!searchText){
@@ -56,7 +58,7 @@ const donorMiddleware = (req,res,next) => {
    if(!name || !email || !validateEmail(email)){
     res.status(400).send('invalid entry')
    }else{
-    res.json(await createUser(email, name))
+    res.json(await createDonor(email, name))
    }
  })
 

@@ -3,30 +3,32 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 //create
-async function createDonor(email, name) {
-    const donor = await prisma.donor.create({
+async function createUser(id, email, name, roles) {
+    const user = await prisma.user.create({
       data: {
+        id: id,
         email: email,
         name: name,
+        roles: roles
       },
     });
-    return donor;
+    return user;
 }
 
 //read
-async function getDonorById(id){
-    const donor = await prisma.donor.findUnique({
+async function getUserById(id){
+    const user = await prisma.user.findUnique({
         where:{
             id: id
            }
     });
-    return donor
+    return user
 }
 
 
 //combine email and name contain
-async function getDonorByString(string){
-    const donors = await prisma.donor.findMany({
+async function getUserByString(string){
+    const users = await prisma.user.findMany({
         where:
             {OR: [{
                 email: {
@@ -41,41 +43,38 @@ async function getDonorByString(string){
             }
         ]}
     });
-    return donors
+    return users
 }
 
-async function getDonorsByEvent(id){
-    const donors = await prisma.donor.findMany({
+async function getAllUsers(){
+    const users = await prisma.user.findMany();
+    return users;
+}
+
+async function getUserPermissions(id){
+    const user = await prisma.user.findUnique({
         where:{
-            events:{
-                some:{
-                    id: id
-                },
-            },
-        },
+            id: id
+        }
     })
-    return donors;
-}
+    return user;
 
-async function getAllDonors(){
-    const donors = await prisma.donor.findMany();
-    return donors;
 }
 
 
 //update
-async function updateDonor(id, data){
-    const donor = await prisma.donor.update({
+async function updateUser(id, data){
+    const user = await prisma.user.update({
         where:{
             id: id
         },
         data: data
-    })
-    return donor;
+    });
+    return user.permisson;
 }
 
 async function addEvents(id, eventID){
-    const event = await prisma.donor.update({
+    const event = await prisma.user.update({
         where: {
             id: id
         },
@@ -86,7 +85,7 @@ async function addEvents(id, eventID){
 }
 
 async function removeEvents(eventID, userID){
-    const donor = await prisma.donor.update({
+    const user = await prisma.user.update({
         where: {
             id: userID
         },
@@ -97,8 +96,8 @@ async function removeEvents(eventID, userID){
 }
 
 //delete
-async function deleteDonor(id){
-    const donor = await prisma.donor.delete({
+async function deleteUser(id){
+    const user = await prisma.user.delete({
         where:{
             id: id
         }
@@ -107,13 +106,13 @@ async function deleteDonor(id){
 
 
 module.exports={
-    createDonor,
-    getAllDonors,
-    getDonorByString,
-    getDonorById,
-    getDonorsByEvent,
-    updateDonor,
+    createUser,
+    getAllUsers,
+    getUserByString,
+    getUserById,
+    getUserPermissions,
+    updateUser,
     addEvents,
     removeEvents,
-    deleteDonor
+    deleteUser
 }
