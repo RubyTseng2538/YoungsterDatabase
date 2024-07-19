@@ -7,21 +7,22 @@ const RoleLevel = {
 }
 
 //API authorization (flexible permission addition)
-async function checkPermission(req, res, next) {
-    const permission = await getUserPermissions(req.user);
-    if(!permission){
-        return res.status(401).send("User is not authenticated");
-    }
-    req.permission = permission.permisson;
-    req.permissionLevel = RoleLevel[req.permission];
-    next();
+function checkPermissionLevel(requiredLevel) {
+    return async function(req, res, next) {
+        // Assuming user's role is stored in req.user after authentication
+        const permission = await getUserPermissions(req.user);
+        if(!permission){
+            return res.status(401).send("User is not authenticated");
+        }
+        req.permission = permission.permisson;
+        req.permissionLevel = RoleLevel[req.permission];
+        // Check if user's level meets the required level
+        if (req.permissionLevel >= requiredLevel) {
+            next(); // Permission granted, proceed to the next middleware/route handler
+        } else {
+            res.status(403).send("Insufficient permissions"); // Permission denied
+        }
+    };
 }
 
-function checkLevel(req, res, requiredLevel, next){
-    if(req.permissionLevel < requiredLevel){
-        return res.status(403).send("User does not have permission");
-    }
-    next();
-}
-
-module.exports = { checkPermission };
+module.exports = { checkPermissionLevel };

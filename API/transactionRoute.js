@@ -6,6 +6,8 @@ const {PaymentMethod} = require("@prisma/client");
 const { getDonorById } = require('../CRUD/donor');
 const { getTransaction, createTransaction, deleteTransaction, getAllTransactions, getTransactionByNote, getTransactionByDonor, getTransactionByEvent, getTransactionByPaymentMethod, getTransactionByEntryDate, getTransactionByTransactionDate, getAllDonationTransaction } = require('../CRUD/transaction');
 const { getReceipt, getReceiptsByString, getAllReceipts } = require('../CRUD/transactionReceipt');
+const { isAuthenticated } = require('./APIAuthentication');
+const { checkPermissionLevel } = require('./APIAuthorization');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
 
@@ -59,7 +61,7 @@ const transactionMiddleware = (req,res,next) => {
     next()
 }
 
-router.get('/transaction', async (req,res)=>{
+router.get('/transaction',isAuthenticated, checkPermissionLevel(2), async (req,res)=>{
     const {searchText, EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, donation} = req.query;
     console.log(req.query);
     if(searchText){
@@ -83,12 +85,12 @@ router.get('/transaction', async (req,res)=>{
  })
 
  //get filter id
- router.get('/transaction/:id',transactionMiddleware,async(req,res)=>{
+ router.get('/transaction/:id',isAuthenticated,checkPermissionLevel(2), transactionMiddleware,async(req,res)=>{
     const id = req.params.id;
     res.json(await getTransaction(id))
  })
 
- router.get('/transactionReceipt', async(req,res)=>{
+ router.get('/transactionReceipt',isAuthenticated,checkPermissionLevel(2), async(req,res)=>{
   const {searchText} = req.query;
   if(searchText){
     res.send(await getReceiptsByString(searchText));
@@ -97,7 +99,7 @@ router.get('/transaction', async (req,res)=>{
   }
 })
 
-router.get('/transactionReceipt/:id', async(req,res)=>{
+router.get('/transactionReceipt/:id',isAuthenticated,checkPermissionLevel(2), async(req,res)=>{
   const receiptNumber = req.params.id;
   if(await getReceipt(receiptNumber)){
     res.json(await getReceipt(receiptNumber));
@@ -107,7 +109,7 @@ router.get('/transactionReceipt/:id', async(req,res)=>{
 })
 
  //create event
- router.post("/transaction", urlencodedParser, async(req, res)=>{
+ router.post("/transaction",isAuthenticated,checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
   const data = req.body;
   let donorID= data.donorID;
   let entryDate= data.entryDate;
@@ -158,7 +160,7 @@ router.get('/transactionReceipt/:id', async(req,res)=>{
  })
 
  //delete transaction
- router.delete('/transaction/:id', transactionMiddleware, async(req, res)=>{
+ router.delete('/transaction/:id',isAuthenticated,checkPermissionLevel(2), transactionMiddleware, async(req, res)=>{
    const id = req.params.id;
    res.json(await deleteTransaction(id))
  })
