@@ -1,3 +1,4 @@
+const { getEvent, getEventsByUser } = require("../CRUD/event");
 const { getUserPermissions } = require("../CRUD/user");
 
 const RoleLevel = {
@@ -25,4 +26,17 @@ function checkPermissionLevel(requiredLevel) {
     };
 }
 
-module.exports = { checkPermissionLevel };
+async function eventCoordinators(req, res, next) { 
+    if (req.permissionLevel == 0){
+        const events = await getEventsByUser(req.user);
+        req.eventIds = [];
+        console.log(events);
+        for(let i = 0; i < events.length; i++){
+            req.eventIds.push(events[i].id);
+        }
+        next();
+    }
+
+}
+
+module.exports = { checkPermissionLevel, eventCoordinators };

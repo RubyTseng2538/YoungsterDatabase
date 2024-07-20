@@ -2,10 +2,10 @@ const {Router} = require('express');
 const bodyParser = require('body-parser');
 const router = new Router();
 
-const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent, addAttendees, removeAttendees, getEventsByDateRange, getEventsByDeadlineRange, getEventsByDonor } = require('../CRUD/event');
+const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent, addAttendees, removeAttendees, getEventsByDateRange, getEventsByDeadlineRange, getEventsByDonor, getEventsByUser, getEventsByNameCoordinator, getEventsByDonorCoordinator, getEventsByDateRangeCoordinator, getEventsByDeadlineRangeCoordinator } = require('../CRUD/event');
 const { getDonorById } = require('../CRUD/donor');
 const { isAuthenticated } = require('./APIAuthentication');
-const { checkPermissionLevel } = require('./APIAuthorization');
+const { checkPermissionLevel, eventCoordinators } = require('./APIAuthorization');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
 
@@ -37,27 +37,51 @@ const eventMiddleware = (req,res,next) => {
 }
 
 //get list of donor & get filter name | email
-router.get('/events', isAuthenticated, checkPermissionLevel(2), async (req,res)=>{
+router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=>{
     const {searchText, DateOne, DateTwo, DeadlineOne, DeadlineTwo, DonorID} = req.query;
     console.log(req.query);
-    if(searchText){
-      res.send(await getEventsByName(searchText));
-    }else if(DateOne&&DateTwo&&validateDate2(DateOne)&&validateDate2(DateTwo)){
-      res.send(await getEventsByDateRange(DateOne, DateTwo));
-    }else if(DeadlineOne&&DeadlineTwo&&validateDate2(DeadlineOne)&&validateDate2(DeadlineTwo)){
-      res.send(await getEventsByDeadlineRange(DeadlineOne, DeadlineTwo));
-    }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
-      res.send(await getEventsByDonor(parseInt(DonorID)))
+    if(req.permissionLevel==0){
+      if(searchText){
+        res.send(await getEventsByNameCoordinator(searchText, req.user));
+      }else if(DateOne&&DateTwo&&validateDate2(DateOne)&&validateDate2(DateTwo)){
+        res.send(await getEventsByDateRangeCoordinator(DateOne, DateTwo));
+      }else if(DeadlineOne&&DeadlineTwo&&validateDate2(DeadlineOne)&&validateDate2(DeadlineTwo)){
+        res.send(await getEventsByDeadlineRangeCoordinator(DeadlineOne, DeadlineTwo));
+      }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
+        res.send(await getEventsByDonorCoordinator(parseInt(DonorID), req.user))
+      }else{
+        res.send(await getEventsByUser(req.user));
+      }
     }else{
-      res.send(await getAllEvents());
+      if(searchText){
+        res.send(await getEventsByName(searchText));
+      }else if(DateOne&&DateTwo&&validateDate2(DateOne)&&validateDate2(DateTwo)){
+        res.send(await getEventsByDateRange(DateOne, DateTwo));
+      }else if(DeadlineOne&&DeadlineTwo&&validateDate2(DeadlineOne)&&validateDate2(DeadlineTwo)){
+        res.send(await getEventsByDeadlineRange(DeadlineOne, DeadlineTwo));
+      }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
+        res.send(await getEventsByDonor(parseInt(DonorID)))
+      }else{
+        res.send(await getAllEvents());
+      }
     }
+    
     
  })
 
  //get filter id
- router.get('/events/:id', isAuthenticated, checkPermissionLevel(2), eventMiddleware,async(req,res)=>{
+ router.get('/events/:id', isAuthenticated, checkPermissionLevel(0), eventCoordinators, eventMiddleware,async(req,res)=>{
     const id = req.params.id;
-    res.json(await getEvent(id))
+    if(req.permissionLevel==0){
+      console.log(req.eventIds);
+      if(req.eventIds.includes(id)){
+        res.json(await getEvent(id));
+      }else{
+        res.status(403).send('insufficient permissions');
+      }
+    }else{
+      res.json(await getEvent(id));
+    }
  })
 
  //create event

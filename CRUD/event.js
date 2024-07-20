@@ -31,10 +31,56 @@ async function getEventsByName(name){
     return events
 }
 
+async function getEventsByNameCoordinator(name, coordinatorID){
+    const events = await prisma.event.findMany({
+        where:{
+            AND:
+            [{eventName: {contains: name, mode: 'insensitive'}},
+            {eventCoordinators:{
+                some:{
+                    id: coordinatorID
+                },
+            }}]
+        }
+    });
+    return events
+}
+
+async function getEventsByDonorCoordinator(id, coordinatorID){
+    const events = await prisma.event.findMany({
+        where:{
+            AND: [{attendees:{
+                some:{
+                    id: id
+                },
+            }},
+            {eventCoordinators:{
+                some:{
+                    id: coordinatorID
+                },
+            }}]
+        },
+    })
+    return events;
+}
+
 async function getEventsByDonor(id){
     const events = await prisma.event.findMany({
         where:{
             attendees:{
+                some:{
+                    id: id
+                },
+            },
+        },
+    })
+    return events;
+}
+
+async function getEventsByUser(id){
+    const events = await prisma.event.findMany({
+        where:{
+            eventCoordinators:{
                 some:{
                     id: id
                 },
@@ -62,6 +108,38 @@ async function getEventsByDeadlineRange(date1, date2){
             lte: new Date(date2),
             gte: new Date(date1),
           },
+        },
+      });
+}
+
+async function getEventsByDateRangeCoordinator(date1, date2, coordinatorID){
+    return await prisma.event.findMany({
+        where: {
+            AND: [{eventCoordinators:{
+                some:{
+                    id: coordinatorID
+                },
+            }},
+          {eventDate: {
+            lte: new Date(date2),
+            gte: new Date(date1),
+          }}],
+        },
+      });
+}
+
+async function getEventsByDeadlineRangeCoordinator(date1, date2){
+    return await prisma.event.findMany({
+        where: {
+            AND: [{eventCoordinators:{
+                some:{
+                    id: coordinatorID
+                },
+            }},
+          {eventDeadline: {
+            lte: new Date(date2),
+            gte: new Date(date1),
+          }}]
         },
       });
 }
@@ -122,8 +200,13 @@ module.exports={
     getEvent,
     getEventsByDateRange,
     getEventsByDeadlineRange,
+    getEventsByNameCoordinator,
+    getEventsByDonorCoordinator,
+    getEventsByDateRangeCoordinator,
+    getEventsByDeadlineRangeCoordinator,
     getEventsByDonor,
     getEventsByName,
+    getEventsByUser,
     updateEvent,
     addAttendees,
     removeAttendees,

@@ -69,7 +69,7 @@ app.get(
 app.get(
     "/auth/google/callback",
     passport.authenticate("google", {
-        successRedirect: "http://localhost:3000/api/v1/donors",
+        successRedirect: "http://localhost:3000/",
         failureRedirect: "http://localhost:3000/",
     })
 );
