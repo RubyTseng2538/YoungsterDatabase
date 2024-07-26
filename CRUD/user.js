@@ -79,7 +79,7 @@ async function updateUser(id, data){
         },
         data: data
     });
-    return user.permisson;
+    return user;
 }
 
 async function addEvents(id, eventID){
