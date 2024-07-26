@@ -19,10 +19,19 @@ async function createUser(id, email, name, roles) {
 async function getUserById(id){
     const user = await prisma.user.findUnique({
         where:{
-            id: id
+            GoogleId: id
            }
     });
     return user
+}
+
+async function getUserByEmail(email){
+    const user = await prisma.user.findUnique({
+        where:{
+            email: email
+        }
+    });
+    return user;
 }
 
 
@@ -54,7 +63,7 @@ async function getAllUsers(){
 async function getUserPermissions(id){
     const user = await prisma.user.findUnique({
         where:{
-            id: id
+            GoogleId: id
         }
     })
     return user;
@@ -110,6 +119,7 @@ module.exports={
     getAllUsers,
     getUserByString,
     getUserById,
+    getUserByEmail,
     getUserPermissions,
     updateUser,
     addEvents,

@@ -4,7 +4,6 @@ const {Router} = require('express');
 const bodyParser = require('body-parser');
 const router = new Router();
 const {getDonorByString, getDonorById, getAllDonors, deleteDonor, updateDonor, createDonor} = require('../CRUD/donor');
-const { isAuthenticated } = require('./APIAuthentication');
 const {checkPermissionLevel } = require('./APIAuthorization');
  
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -33,7 +32,7 @@ const donorMiddleware = (req,res,next) => {
 }
 
 //get list of donor & get filter name | email
- router.get('/donors', isAuthenticated, checkPermissionLevel(2), async (req,res)=>{
+ router.get('/donors', checkPermissionLevel(2), async (req,res)=>{
     const {searchText} = req.query;
     console.log(req.query);
     if(!searchText){
@@ -45,13 +44,13 @@ const donorMiddleware = (req,res,next) => {
  })
 
  //get filter id
- router.get('/donors/:id', isAuthenticated, checkPermissionLevel(2), donorMiddleware,async(req,res)=>{
+ router.get('/donors/:id', checkPermissionLevel(2), donorMiddleware,async(req,res)=>{
     const id = req.params.id;
     res.json(await getDonorById(id))
  })
 
  //create donor
- router.post("/donors", isAuthenticated, checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
+ router.post("/donors", checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
   const data = req.body;
    let email= data.email;
    let name= data.name;
@@ -63,7 +62,7 @@ const donorMiddleware = (req,res,next) => {
  })
 
  //update donor
- router.put('/donors/:id', isAuthenticated, checkPermissionLevel(2), donorMiddleware, urlencodedParser, async(req, res)=>{
+ router.put('/donors/:id', checkPermissionLevel(2), donorMiddleware, urlencodedParser, async(req, res)=>{
    const id = req.params.id;
    let data = req.body;
    let entry = {};
@@ -85,7 +84,7 @@ const donorMiddleware = (req,res,next) => {
  })
 
  //delete donor
- router.delete('/donors/:id', isAuthenticated, checkPermissionLevel(2),donorMiddleware, async(req, res)=>{
+ router.delete('/donors/:id', checkPermissionLevel(2),donorMiddleware, async(req, res)=>{
    const id = req.params.id;
    res.json(await deleteDonor(id))
  })

@@ -4,7 +4,6 @@ const router = new Router();
 
 const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent, addAttendees, removeAttendees, getEventsByDateRange, getEventsByDeadlineRange, getEventsByDonor, getEventsByUser, getEventsByNameCoordinator, getEventsByDonorCoordinator, getEventsByDateRangeCoordinator, getEventsByDeadlineRangeCoordinator } = require('../CRUD/event');
 const { getDonorById } = require('../CRUD/donor');
-const { isAuthenticated } = require('./APIAuthentication');
 const { checkPermissionLevel, eventCoordinators } = require('./APIAuthorization');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
@@ -37,7 +36,7 @@ const eventMiddleware = (req,res,next) => {
 }
 
 //get list of donor & get filter name | email
-router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=>{
+router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
     const {searchText, DateOne, DateTwo, DeadlineOne, DeadlineTwo, DonorID} = req.query;
     console.log(req.query);
     if(req.permissionLevel==0){
@@ -70,7 +69,7 @@ router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=
  })
 
  //get filter id
- router.get('/events/:id', isAuthenticated, checkPermissionLevel(0), eventCoordinators, eventMiddleware,async(req,res)=>{
+ router.get('/events/:id' , checkPermissionLevel(0), eventCoordinators, eventMiddleware,async(req,res)=>{
     const id = req.params.id;
     if(req.permissionLevel==0){
       console.log(req.eventIds);
@@ -85,7 +84,7 @@ router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=
  })
 
  //create event
- router.post("/events", isAuthenticated, checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
+ router.post("/events", checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
   const data = req.body;
    let eventName= data.eventName;
    let eventDate= data.eventDate;
@@ -101,7 +100,7 @@ router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=
  })
 
  //update event
- router.put('/events/:id',isAuthenticated,checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req, res)=>{
+ router.put('/events/:id',checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req, res)=>{
    const id = req.params.id;
    let data = req.body;
    let entry = {};
@@ -123,7 +122,7 @@ router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=
    res.json(await updateEvent(id, entry));
  })
 
- router.put('/events/addAttendees/:id',isAuthenticated,checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req,res)=>{
+ router.put('/events/addAttendees/:id',checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req,res)=>{
   const id = req.params.id;
   let data = req.body;
   if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
@@ -133,7 +132,7 @@ router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=
   }
  })
 
- router.put('/events/removeAttendees/:id',isAuthenticated,checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req,res)=>{
+ router.put('/events/removeAttendees/:id',checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req,res)=>{
   const id = req.params.id;
   let data = req.body;
   if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
@@ -144,7 +143,7 @@ router.get('/events', isAuthenticated, checkPermissionLevel(0), async (req,res)=
  })
 
  //delete donor
- router.delete('/events/:id',isAuthenticated,checkPermissionLevel(2), eventMiddleware, async(req, res)=>{
+ router.delete('/events/:id',checkPermissionLevel(2), eventMiddleware, async(req, res)=>{
    const id = req.params.id;
    res.json(await deleteEvent(id))
  })

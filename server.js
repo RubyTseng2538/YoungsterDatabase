@@ -1,55 +1,71 @@
 const express = require('express');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const cookieParser = require('cookie-parser');
 const donorRoutes = require('./API/donorRoute');
 const eventRoutes = require('./API/eventRoute');
 const transactionRoutes = require('./API/transactionRoute');
+
+const { google } = require('googleapis');
+
+const {OAuth2Client} = require('google-auth-library');
+const { isAuthenticated, checkUserInSystem } = require('./API/APIAuthentication');
 require('dotenv').config(); 
 // Step 1: Import express-session
-const session = require('express-session');
-const { getUserById } = require('./CRUD/user');
+
 
 const app = express();
 const port = 3000;
 
-passport.use(
-    new GoogleStrategy({
-        clientID: '699961587857-tt6mg3bpr2nock1oc5nugucvkf15hjq9.apps.googleusercontent.com',
-        clientSecret: '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',
-        callbackURL: 'http://localhost:3000/auth/google/callback'
-    },
-    (accessToken, refreshToken, profile, done) => {
-        console.log(profile);
-      done(null, profile);
-    })
-);
+app.use(cookieParser());
 
-// Serialize User
-passport.serializeUser((user, done) => {
-  done(null, user.id); // 'user.id' should be replaced with how you identify users in your application
-});
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 
-// Deserialize User
-passport.deserializeUser((id, done) => {
-  // Here you find the user by ID. This example assumes you have a 'findUserById' function.
-  getUserById(id, (err, user) => {
-      done(err, user);
-  });
-  done(null, id);
-});
-
-app.use(session({
-  secret: process.env.SESSION_SECRET_kEY, // This is a secret key for your session. You should store it in an environment variable.
-  resave: false, // This option forces the session to be saved back to the session store, even if the session was never modified during the request.
-  saveUninitialized: false, // This option forces a session that is "uninitialized" to be saved to the store. A session is uninitialized when it is new but not modified.
-  cookie: { secure: false } // This should be set to true in a production environment with HTTPS
-}));
-
-// Step 3: Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session()); // This tells Passport to use session support.
+const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 // Note: Make sure the above code is placed before your routes that require authentication.
+app.get('/auth/google', (req, res) => {
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: ['https://www.googleapis.com/auth/userinfo.profile',
+                'https://www.googleapis.com/auth/userinfo.email'
+      ],
+    });
+    res.redirect(url);
+  });
+  
+app.get('/auth/google/callback', async (req, res) => {
+    try {
+        const { code } = req.query;
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+        res.cookie('token', tokens.id_token);
+        const ticket = await oauth2Client.verifyIdToken({
+            idToken: tokens.id_token,
+            audience: process.env.CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+            // Or, if multiple clients access the backend:
+            //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+        });
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+        // If the request specified a Google Workspace domain:
+        // const domain = payload['hd'];
+
+        const oauth2 = google.oauth2({auth: oauth2Client, version: 'v2'});
+        const userInfo = await oauth2.userinfo.get();
+        console.log(userInfo.data);
+        res.cookie('user', userInfo.data);
+        // Here, you can also redirect the user to another page or perform further actions
+        checkUserInSystem(req, res, () => {
+            res.redirect('/'); // Redirect to homepage on successful authentication
+        });
+    } catch (error) {
+        console.error('Error during authentication:', error);
+        res.redirect('/?error=authentication_failed'); // Redirect to homepage with an error message on failure
+    }
+});
+
+app.use(isAuthenticated);
 
 app.use('/api/v1', [donorRoutes, eventRoutes, transactionRoutes]);
 
@@ -60,17 +76,4 @@ app.get('/', (_, res) => {
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
 });
-
-app.get(
-    "/auth/google",
-    passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-app.get(
-    "/auth/google/callback",
-    passport.authenticate("google", {
-        successRedirect: "http://localhost:3000/",
-        failureRedirect: "http://localhost:3000/",
-    })
-);
 

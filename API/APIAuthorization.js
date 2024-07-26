@@ -11,11 +11,12 @@ const RoleLevel = {
 function checkPermissionLevel(requiredLevel) {
     return async function(req, res, next) {
         // Assuming user's role is stored in req.user after authentication
-        const permission = await getUserPermissions(req.user);
+        const user = req.cookies.user;
+        const permission = await getUserPermissions(user.id);
         if(!permission){
-            return res.status(401).send("User is not authenticated");
+            return res.status(401).send("User is not authorized");
         }
-        req.permission = permission.permisson;
+        req.permission = permission.permission;
         req.permissionLevel = RoleLevel[req.permission];
         // Check if user's level meets the required level
         if (req.permissionLevel >= requiredLevel) {

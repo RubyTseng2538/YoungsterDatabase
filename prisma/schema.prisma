@@ -15,11 +15,12 @@ datasource db {
 }
 
 model User{
-  id              String @id//google id
-  name            String
-  email           String
-  permisson       Roles
-  eventsInCharge  Event[]
+  id               Int           @id @default(autoincrement())
+  GoogleId         String?       @unique
+  name             String
+  email            String        @unique
+  permission       Roles
+  eventsInCharge   Event[]
 }
 
 model Donor {
