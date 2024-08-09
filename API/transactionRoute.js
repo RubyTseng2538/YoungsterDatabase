@@ -84,25 +84,25 @@ const transactionMiddleware = (req,res,next) => {
     next()
 }
 
-router.get('/transaction', checkPermissionLevel(2), async (req,res)=>{
+router.get('/transaction', async (req,res)=>{
     const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status} = req.query;
     console.log(req.query);
     if(EntryDateOne&&EntryDateTwo&&validateDate2(EntryDateOne)&&validateDate2(EntryDateTwo)){
-      filter.push({entryDate: {gte: EntryDateOne, lte: EntryDateTwo}});
+      filter.entryDate= {gte: EntryDateOne, lte: EntryDateTwo};
     }if(TransactionDateOne&&TransactionDateTwo&&validateDate2(TransactionDateOne)&&validateDate2(TransactionDateTwo)){
-      filter.push({transactionDate: {gte: TransactionDateOne, lte: TransactionDateTwo}});
+      filter.transactionDate= {gte: TransactionDateOne, lte: TransactionDateTwo};
     }if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
-      filter.push({donorID: parseInt(DonorID)});
+      filter.donorID = parseInt(DonorID);
     }if(EventID&&isInt(EventID)&&getDonorById(parseInt(EventID))){
-      filter.push({eventID: parseInt(EventID)});
+      filter.eventID= parseInt(EventID);
     }if(payment&&convertStringToPaymentMethod(payment)){
-      filter.push({paymentMethod: convertStringToPaymentMethod(payment)});
+      filter.paymentMethod= convertStringToPaymentMethod(payment);
     }if(transactionType&&convertStringToTransactionType(transactionType)){
-      filter.push({transactionType: convertStringToTransactionType(transactionType)});
+      filter.transactionType= convertStringToTransactionType(transactionType);
     }if(status&&convertStringToStatus(status)){
-      filter.push({status: convertStringToStatus(status)});
+      filter.status= convertStringToStatus(status);
     }
-    if(filter.length === 0){
+    if(filter.length == 0){
       res.send(await getAllTransactions());
     }else{
       res.send(await getDynamicFilteredTransactions(filter));
@@ -111,12 +111,12 @@ router.get('/transaction', checkPermissionLevel(2), async (req,res)=>{
  })
 
  //get filter id
- router.get('/transaction/:id',checkPermissionLevel(2), transactionMiddleware,async(req,res)=>{
+ router.get('/transaction/:id', transactionMiddleware,async(req,res)=>{
     const id = req.params.id;
     res.json(await getTransaction(id))
  })
 
- router.get('/transactionReceipt',checkPermissionLevel(2), async(req,res)=>{
+ router.get('/transactionReceipt', async(req,res)=>{
   const {searchText} = req.query;
   if(searchText){
     res.send(await getReceiptsByString(searchText));
@@ -125,7 +125,7 @@ router.get('/transaction', checkPermissionLevel(2), async (req,res)=>{
   }
 })
 
-router.get('/transactionReceipt/:id',checkPermissionLevel(2), async(req,res)=>{
+router.get('/transactionReceipt/:id', async(req,res)=>{
   const receiptNumber = req.params.id;
   if(await getReceipt(receiptNumber)){
     res.json(await getReceipt(receiptNumber));
@@ -135,7 +135,7 @@ router.get('/transactionReceipt/:id',checkPermissionLevel(2), async(req,res)=>{
 })
 
  //create event
- router.post("/transaction", checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
+ router.post("/transaction", urlencodedParser, async(req, res)=>{
   const data = req.body;
   
   let entryDate= data.entryDate;
@@ -192,7 +192,7 @@ router.get('/transactionReceipt/:id',checkPermissionLevel(2), async(req,res)=>{
  })
 
  //delete transaction
- router.delete('/transaction/:id',checkPermissionLevel(2), transactionMiddleware, async(req, res)=>{
+ router.delete('/transaction/:id', transactionMiddleware, async(req, res)=>{
    const id = req.params.id;
    res.json(await editTransaction(id, {status: Status.VOID}));
  })

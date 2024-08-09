@@ -27,7 +27,7 @@ async function getTransaction(id){
     return transaction
 }
 
-async function getDynamicFilteredTransactions(filters, pageNumber, take = 10) {
+async function getDynamicFilteredTransactions(filters, pageNumber = 1, take = 10) {
     const transactions = await prisma.transaction.findMany({
         where: filters,
         skip: (pageNumber-1)*take,

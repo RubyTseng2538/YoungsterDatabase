@@ -36,22 +36,22 @@ const eventMiddleware = (req,res,next) => {
 }
 
 //get list of donor & get filter name | email
-router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
+router.get('/events' , async (req,res)=>{
     const {searchText, DateOne, DateTwo, DeadlineOne, DeadlineTwo, DonorID} = req.query;
     console.log(req.query);
-    if(req.permissionLevel==0){
-      if(searchText){
-        res.send(await getEventsByNameCoordinator(searchText, req.user));
-      }else if(DateOne&&DateTwo&&validateDate2(DateOne)&&validateDate2(DateTwo)){
-        res.send(await getEventsByDateRangeCoordinator(DateOne, DateTwo));
-      }else if(DeadlineOne&&DeadlineTwo&&validateDate2(DeadlineOne)&&validateDate2(DeadlineTwo)){
-        res.send(await getEventsByDeadlineRangeCoordinator(DeadlineOne, DeadlineTwo));
-      }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
-        res.send(await getEventsByDonorCoordinator(parseInt(DonorID), req.user))
-      }else{
-        res.send(await getEventsByUser(req.user));
-      }
-    }else{
+    // if(req.permissionLevel==0){
+    //   if(searchText){
+    //     res.send(await getEventsByNameCoordinator(searchText, req.user));
+    //   }else if(DateOne&&DateTwo&&validateDate2(DateOne)&&validateDate2(DateTwo)){
+    //     res.send(await getEventsByDateRangeCoordinator(DateOne, DateTwo));
+    //   }else if(DeadlineOne&&DeadlineTwo&&validateDate2(DeadlineOne)&&validateDate2(DeadlineTwo)){
+    //     res.send(await getEventsByDeadlineRangeCoordinator(DeadlineOne, DeadlineTwo));
+    //   }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
+    //     res.send(await getEventsByDonorCoordinator(parseInt(DonorID), req.user))
+    //   }else{
+    //     res.send(await getEventsByUser(req.user));
+    //   }
+    // }else{
       if(searchText){
         res.send(await getEventsByName(searchText));
       }else if(DateOne&&DateTwo&&validateDate2(DateOne)&&validateDate2(DateTwo)){
@@ -63,13 +63,13 @@ router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
       }else{
         res.send(await getActiveEvents());
       }
-    }
+    // }
     
     
  })
 
  //get filter id
- router.get('/events/:id' , checkPermissionLevel(0), eventCoordinators, eventMiddleware,async(req,res)=>{
+ router.get('/events/:id' , eventCoordinators, eventMiddleware,async(req,res)=>{
     const id = req.params.id;
     if(req.permissionLevel==0){
       console.log(req.eventIds);
@@ -84,7 +84,7 @@ router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
  })
 
  //create event
- router.post("/events", checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
+ router.post("/events", urlencodedParser, async(req, res)=>{
   const data = req.body;
    let eventName= data.eventName;
    let eventDate= data.eventDate;
@@ -100,7 +100,7 @@ router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
  })
 
  //update event
- router.put('/events/:id',checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req, res)=>{
+ router.put('/events/:id', eventMiddleware, urlencodedParser, async(req, res)=>{
    const id = req.params.id;
    let data = req.body;
    let entry = {};
@@ -122,7 +122,7 @@ router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
    res.json(await updateEvent(id, entry));
  })
 
- router.put('/events/addAttendees/:id',checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req,res)=>{
+ router.put('/events/addAttendees/:id', eventMiddleware, urlencodedParser, async(req,res)=>{
   const id = req.params.id;
   let data = req.body;
   if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
@@ -132,7 +132,7 @@ router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
   }
  })
 
- router.put('/events/removeAttendees/:id',checkPermissionLevel(2), eventMiddleware, urlencodedParser, async(req,res)=>{
+ router.put('/events/removeAttendees/:id', eventMiddleware, urlencodedParser, async(req,res)=>{
   const id = req.params.id;
   let data = req.body;
   if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
@@ -143,7 +143,7 @@ router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
  })
 
  //delete donor
- router.delete('/events/:id',checkPermissionLevel(2), eventMiddleware, async(req, res)=>{
+ router.delete('/events/:id', eventMiddleware, async(req, res)=>{
    const id = req.params.id;
    res.json(await deleteEvent(id))
  })

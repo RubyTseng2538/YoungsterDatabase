@@ -145,7 +145,7 @@ async function getEventsByDeadlineRangeCoordinator(date1, date2){
       });
 }
 
-async function getActiveEvents(pageNumber, take = 10) {  
+async function getActiveEvents(pageNumber = 1, take = 10) {  
     const events = await prisma.event.findMany({
         where: {
             eventStatus: true
