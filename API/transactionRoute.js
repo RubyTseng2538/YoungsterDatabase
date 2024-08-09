@@ -1,14 +1,16 @@
 const {Router} = require('express');
 const bodyParser = require('body-parser');
 const router = new Router();
-const {PaymentMethod} = require("@prisma/client");
+const {PaymentMethod, TransactionType, Status} = require("@prisma/client");
 
 const { getDonorById } = require('../CRUD/donor');
-const { getTransaction, createTransaction, deleteTransaction, getAllTransactions, getTransactionByNote, getTransactionByDonor, getTransactionByEvent, getTransactionByPaymentMethod, getTransactionByEntryDate, getTransactionByTransactionDate, getAllDonationTransaction } = require('../CRUD/transaction');
+const { getTransaction, createTransaction, deleteTransaction, getAllTransactions, getTransactionByNote, getTransactionByDonor, getTransactionByEvent, getTransactionByPaymentMethod, getTransactionByEntryDate, getTransactionByTransactionDate, getAllDonationTransaction, editTransaction, getDynamicFilteredTransactions } = require('../CRUD/transaction');
 const { getReceipt, getReceiptsByString, getAllReceipts } = require('../CRUD/transactionReceipt');
 const { checkPermissionLevel } = require('./APIAuthorization');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
+
+let filter = {};
 
 function isInt(value) {
     var x = parseFloat(value);
@@ -51,6 +53,28 @@ const convertStringToPaymentMethod = (method)=>{
   }
 }
 
+const convertStringToTransactionType = (type)=>{
+  if(type == "DEPOSIT"){
+    return TransactionType.DEPOSIT;
+  }else if(type == "EXPENSE"){
+    return TransactionType.EXPENSE;
+  }else{
+    return false;
+  }
+}
+
+const convertStringToStatus = (status)=>{
+  if(status == "PENDING"){
+    return Status.PENDING;
+  }else if(status == "COMPLETE"){
+    return Status.COMPLETE;
+  }else if(status == "VOID"){
+    return Status.VOID;
+  }else{
+    return false;
+  }
+}
+
 const transactionMiddleware = (req,res,next) => {
     const id = req.params.id;
     if(!id || isNaN(id) || !isInt(id)){
@@ -61,24 +85,27 @@ const transactionMiddleware = (req,res,next) => {
 }
 
 router.get('/transaction', checkPermissionLevel(2), async (req,res)=>{
-    const {searchText, EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, donation} = req.query;
+    const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status} = req.query;
     console.log(req.query);
-    if(searchText){
-      res.send(await getTransactionByNote(searchText));
-    }else if(EntryDateOne&&EntryDateTwo&&validateDate2(EntryDateOne)&&validateDate2(EntryDateTwo)){
-      res.send(await getTransactionByEntryDate(EntryDateOne, EntryDateTwo));
-    }else if(TransactionDateOne&&TransactionDateTwo&&validateDate2(TransactionDateOne)&&validateDate2(TransactionDateTwo)){
-      res.send(await getTransactionByTransactionDate(TransactionDateOne, TransactionDateTwo));
-    }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
-      res.send(await getTransactionByDonor(parseInt(DonorID)))
-    }else if(EventID&&isInt(EventID)&&getDonorById(parseInt(EventID))){
-      res.send(await getTransactionByEvent(parseInt(EventID)))
-    }else if(payment&&convertStringToPaymentMethod(payment)){
-      res.send(await getTransactionByPaymentMethod(convertStringToPaymentMethod(payment)))
-    }else if(Boolean(donation) == true){
-      res.send(await getAllDonationTransaction())
-    }else{
+    if(EntryDateOne&&EntryDateTwo&&validateDate2(EntryDateOne)&&validateDate2(EntryDateTwo)){
+      filter.push({entryDate: {gte: EntryDateOne, lte: EntryDateTwo}});
+    }if(TransactionDateOne&&TransactionDateTwo&&validateDate2(TransactionDateOne)&&validateDate2(TransactionDateTwo)){
+      filter.push({transactionDate: {gte: TransactionDateOne, lte: TransactionDateTwo}});
+    }if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
+      filter.push({donorID: parseInt(DonorID)});
+    }if(EventID&&isInt(EventID)&&getDonorById(parseInt(EventID))){
+      filter.push({eventID: parseInt(EventID)});
+    }if(payment&&convertStringToPaymentMethod(payment)){
+      filter.push({paymentMethod: convertStringToPaymentMethod(payment)});
+    }if(transactionType&&convertStringToTransactionType(transactionType)){
+      filter.push({transactionType: convertStringToTransactionType(transactionType)});
+    }if(status&&convertStringToStatus(status)){
+      filter.push({status: convertStringToStatus(status)});
+    }
+    if(filter.length === 0){
       res.send(await getAllTransactions());
+    }else{
+      res.send(await getDynamicFilteredTransactions(filter));
     }
     
  })
@@ -110,19 +137,22 @@ router.get('/transactionReceipt/:id',checkPermissionLevel(2), async(req,res)=>{
  //create event
  router.post("/transaction", checkPermissionLevel(2), urlencodedParser, async(req, res)=>{
   const data = req.body;
-  let donorID= data.donorID;
+  
   let entryDate= data.entryDate;
   let transactionDate = data.transactionDate;
-  let amount = data.amount;
-  let donation = isTrue(data.donation);
+  let donorID= data.donorID;
   let eventID = data.eventID;
   let paymentMethod = convertStringToPaymentMethod(data.paymentMethod);
+  let amount = data.amount;
   let receiptNumber = data.receiptNumber;
+  let referenceNumber = data.referenceNumber;
+  let transactionType = convertStringToTransactionType(data.transactionType);
+  let status = convertStringToStatus(data.status);
   let email = data.email;
   let name = data.name;
   let sendDate = data.sendDate;
   console.log(data, donation);
-  if(!entryDate||!donorID||!transactionDate||!paymentMethod||!validateDate(entryDate)||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||donation == null||!email||!name||!receiptNumber||!sendDate||!validateDate(sendDate)||!validateEmail(email)){
+  if(!entryDate||!donorID||!transactionDate||!paymentMethod||!validateDate(entryDate)||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||!email||!name||!receiptNumber||!sendDate||!validateDate(sendDate)||!validateEmail(email)||!transactionType||!status){
     res.status(400).send('invalid entry');
     res.end();
   }else{
@@ -130,18 +160,21 @@ router.get('/transactionReceipt/:id',checkPermissionLevel(2), async(req,res)=>{
     transactionData.amount = parseFloat(transactionData.amount);
     transactionData.donorID = parseInt(transactionData.donorID);
     transactionData.eventID = parseInt(transactionData.eventID);
-    transactionData.donation = isTrue(transactionData.donation);
     transactionData.paymentMethod = convertStringToPaymentMethod(transactionData.paymentMethod);
+    transactionData.transactionType = convertStringToTransactionType(transactionData.transactionType);
+    transactionData.status = convertStringToStatus(transactionData.status);
 
     let tData = {
       entryDate: transactionData.entryDate,
-      transactionDate: transactionData.transactionDate,
+      transactionionDate: transactionData.transactionDate,
       donorID: transactionData.donorID,
       eventID: transactionData.eventID,
-      amount: transactionData.amount,
       paymentMethod: transactionData.paymentMethod,
+      amount: transactionData.amount,
       receiptID: transactionData.receiptNumber,
-      donation: transactionData.donation,
+      referenceNumber: transactionData.referenceNumber,
+      transactionType: transactionData.transactionType,
+      status: transactionData.status,
       note: transactionData.note
     }
 
@@ -161,6 +194,6 @@ router.get('/transactionReceipt/:id',checkPermissionLevel(2), async(req,res)=>{
  //delete transaction
  router.delete('/transaction/:id',checkPermissionLevel(2), transactionMiddleware, async(req, res)=>{
    const id = req.params.id;
-   res.json(await deleteTransaction(id))
+   res.json(await editTransaction(id, {status: Status.VOID}));
  })
 module.exports=router;

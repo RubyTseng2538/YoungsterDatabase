@@ -77,16 +77,17 @@ async function getEventsByDonor(id){
     return events;
 }
 
-async function getEventsByUser(id){
+async function getEventsByUser(id) {
     const events = await prisma.event.findMany({
-        where:{
-            eventCoordinators:{
-                some:{
+        where: {
+            eventCoordinators: {
+                some: {
                     id: id
                 },
             },
+            eventStatus: true, // Add this line to filter only active events
         },
-    })
+    });
     return events;
 }
 
@@ -144,8 +145,22 @@ async function getEventsByDeadlineRangeCoordinator(date1, date2){
       });
 }
 
-async function getAllEvents(){
-    const events = await prisma.event.findMany();
+async function getActiveEvents(pageNumber, take = 10) {  
+    const events = await prisma.event.findMany({
+        where: {
+            eventStatus: true
+        },
+        skip: (pageNumber-1)*take,
+        take: take,
+    });
+    return events;
+}
+
+async function getAllEvents(pageNumber, take = 10) {
+    const events = await prisma.event.findMany({
+        skip: (pageNumber - 1) * take,
+        take: take,
+    });
     return events;
 }
 
@@ -207,6 +222,7 @@ module.exports={
     getEventsByDonor,
     getEventsByName,
     getEventsByUser,
+    getActiveEvents,
     updateEvent,
     addAttendees,
     removeAttendees,

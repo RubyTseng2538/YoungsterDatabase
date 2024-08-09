@@ -27,6 +27,18 @@ async function getTransaction(id){
     return transaction
 }
 
+async function getDynamicFilteredTransactions(filters, pageNumber, take = 10) {
+    const transactions = await prisma.transaction.findMany({
+        where: filters,
+        skip: (pageNumber-1)*take,
+        take: take,
+        orderBy: {
+            entryDate: 'desc',
+        },
+    });
+    return transactions;
+}
+
 async function getTransactionByDonor(id){
     const transactions = await prisma.transaction.findMany({
         where:{
@@ -94,22 +106,28 @@ async function getTransactionByNote(note){
     return transactions;
 }
 
-async function getAllTransactions(){
-    const transactions = await prisma.transaction.findMany();
+async function getAllTransactions(pageNumber = 1, take = 10) {
+    const transactions = await prisma.transaction.findMany({
+        skip: (pageNumber - 1) * take,
+        take: take,
+        orderBy: {
+            entryDate: 'desc',
+        },
+    });
     return transactions;
 }
 
 
 //update
-// async function updateEvent(id, data){
-//     const event = await prisma.event.update({
-//         where:{
-//             id: id
-//         },
-//         data: data
-//     })
-//     return event;
-// }
+async function editTransaction(id, data){
+    const event = await prisma.event.update({
+        where:{
+            id: id
+        },
+        data: data
+    })
+    return event;
+}
 
 //delete
 async function deleteTransaction(id){
@@ -134,5 +152,7 @@ module.exports ={
     getTransactionByPaymentMethod,
     getTransactionByEntryDate,
     getTransactionByTransactionDate,
+    getDynamicFilteredTransactions, 
+    editTransaction,
     deleteTransaction
 }

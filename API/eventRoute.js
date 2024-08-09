@@ -2,7 +2,7 @@ const {Router} = require('express');
 const bodyParser = require('body-parser');
 const router = new Router();
 
-const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent, addAttendees, removeAttendees, getEventsByDateRange, getEventsByDeadlineRange, getEventsByDonor, getEventsByUser, getEventsByNameCoordinator, getEventsByDonorCoordinator, getEventsByDateRangeCoordinator, getEventsByDeadlineRangeCoordinator } = require('../CRUD/event');
+const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent, addAttendees, removeAttendees, getEventsByDateRange, getEventsByDeadlineRange, getEventsByDonor, getEventsByUser, getEventsByNameCoordinator, getEventsByDonorCoordinator, getEventsByDateRangeCoordinator, getEventsByDeadlineRangeCoordinator, getActiveEvents } = require('../CRUD/event');
 const { getDonorById } = require('../CRUD/donor');
 const { checkPermissionLevel, eventCoordinators } = require('./APIAuthorization');
 
@@ -61,7 +61,7 @@ router.get('/events' , checkPermissionLevel(0), async (req,res)=>{
       }else if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
         res.send(await getEventsByDonor(parseInt(DonorID)))
       }else{
-        res.send(await getAllEvents());
+        res.send(await getActiveEvents());
       }
     }
     

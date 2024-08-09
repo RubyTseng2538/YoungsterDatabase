@@ -65,7 +65,7 @@ app.get('/auth/google/callback', async (req, res) => {
     }
 });
 
-app.use(isAuthenticated);
+// app.use(isAuthenticated);
 
 app.use('/api/v1', [donorRoutes, eventRoutes, transactionRoutes]);
 

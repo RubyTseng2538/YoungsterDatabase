@@ -36,6 +36,7 @@ model Event {
   eventName     String
   eventDate     DateTime
   eventLocation String?
+  eventStatus   Boolean       @default(true)
   fee           Float?
   eventDeadline DateTime
   eventCoordinators User[]
@@ -46,7 +47,7 @@ model Event {
 model Transaction {
   id              Int                 @id @default(autoincrement())
   entryDate       DateTime
-  transactionDate DateTime
+  transactionDate DateTime            @default(now())
   donor           Donor               @relation(fields: [donorID], references: [id])
   donorID         Int
   event           Event?              @relation(fields: [eventID], references: [id])
@@ -55,7 +56,9 @@ model Transaction {
   amount          Float
   receipt         TransactionReceipt? @relation(fields: [receiptID], references: [receiptNumber])
   receiptID       String?             @unique
-  donation        Boolean
+  referenceNumber String?
+  transactionType TransactionType
+  status          Status
   note            String?
 }
 
@@ -77,4 +80,15 @@ enum Roles {
     ADMIN
     AUDITOR
     EVENTCOORDINATOR
+}
+
+enum TransactionType {
+  DEPOSIT
+  EXPENSE 
+}
+
+enum Status {
+  PENDING
+  COMPLETED
+  VOID
 }
