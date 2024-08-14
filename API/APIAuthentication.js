@@ -12,7 +12,8 @@ async function isAuthenticated(req, res, next) {
     // Extract the token from the Authorization header
     try {
         // Extract the token from the cookie
-        const token = req.cookies.token;
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
         if (!token) {
             return res.status(401).send('Token missing');
         }
