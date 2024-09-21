@@ -51,9 +51,7 @@ const donorMiddleware = (req,res,next) => {
 
  //create donor
  router.post("/donors", urlencodedParser, async(req, res)=>{
-  const data = req.body;
-   let email= data.email;
-   let name= data.name;
+  const { name, email } = req.body;
    if(!name || !email || !validateEmail(email)){
     res.status(400).send('invalid entry')
    }else{
