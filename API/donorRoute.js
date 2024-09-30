@@ -32,60 +32,69 @@ const donorMiddleware = (req,res,next) => {
 }
 
 //get list of donor & get filter name | email
- router.get('/donors', async (req,res)=>{
-    const {searchText} = req.query;
-    console.log(req.query);
-    if(!searchText){
-      res.send(await getAllDonors());
-    }else{
-      res.send(await getDonorByString(searchText));
-    }
-    
- })
+router.get('/donors', async (req, res) => {
+  try {
+      const { searchText } = req.query;
+      console.log(req.query);
+      if (!searchText) {
+          res.send(await getAllDonors());
+      } else {
+          res.send(await getDonorByString(searchText));
+      }
+  } catch (error) {
+      res.status(500).send('Internal Server Error');
+  }
+});
 
  //get filter id
- router.get('/donors/:id', donorMiddleware,async(req,res)=>{
-    const id = req.params.id;
-    res.json(await getDonorById(id))
- })
+ router.get('/donors/:id', donorMiddleware, async (req, res) => {
+  try {
+      const id = req.params.id;
+      res.json(await getDonorById(id));
+  } catch (error) {
+      res.status(500).send('Internal Server Error');
+  }
+});
 
  //create donor
- router.post("/donors", urlencodedParser, async(req, res)=>{
-  const { name, email } = req.body;
-   if(!name || !email || !validateEmail(email)){
-    res.status(400).send('invalid entry')
-   }else{
-    res.json(await createDonor(email, name))
-   }
- })
+ router.post('/donors', urlencodedParser, async (req, res) => {
+  try {
+      const { name, email } = req.body;
+      if (!name || !email || !validateEmail(email)) {
+          res.status(400).send('Invalid entry');
+      } else {
+          res.json(await createDonor(email, name));
+      }
+  } catch (error) {
+      res.status(500).send('Internal Server Error');
+  }
+});
 
  //update donor
- router.put('/donors/:id', donorMiddleware, urlencodedParser, async(req, res)=>{
-   const id = req.params.id;
-   let data = req.body;
-   let entry = {};
-   if(data.email&&validateEmail(data.email)){
-    entry = {
-      email: data.email,
-      name: data.name
-    }
-    res.json(await updateDonor(id, entry));
-   }else if(!data.email && data.name){
-    entry = {
-      name: data.name
-    }
-    res.json(await updateDonor(id, entry));
-   }else{
-    res.status(400).send('invalid entry');
-   }
-   console.log(entry);
- })
+ router.put('/donors/:id', urlencodedParser, async (req, res) => {
+  try {
+      const id = req.params.id;
+      const { name, email } = req.body;
+      if (!name || !email || !validateEmail(email)) {
+          res.status(400).send('Invalid entry');
+      } else {
+          res.json(await updateDonor(id, email, name));
+      }
+  } catch (error) {
+      res.status(500).send('Internal Server Error');
+  }
+});
 
  //delete donor
- router.delete('/donors/:id',donorMiddleware, async(req, res)=>{
-   const id = req.params.id;
-   res.json(await deleteDonor(id))
- })
+ router.delete('/donors/:id', async (req, res) => {
+  try {
+      const id = req.params.id;
+      await deleteDonor(id);
+      res.status(204).send();
+  } catch (error) {
+      res.status(500).send('Internal Server Error');
+  }
+});
 
 
  module.exports=router;

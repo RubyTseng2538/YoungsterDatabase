@@ -1,19 +1,62 @@
 const { PrismaClient, PaymentMethod } = require("@prisma/client");
 
 const { deleteReceipt } = require('./transactionReceipt');
+const { incrementConfig, getConfigStringByUser, getConfigByUser } = require("./receiptConfig");
+const { get } = require("jquery");
 
 const prisma = new PrismaClient();
 
-//create
-async function createTransaction(data, receiptData) {
-    const receipt = await prisma.transactionReceipt.create({
-        data: receiptData  
-    })
-    const transaction = await prisma.transaction.create({
-      data: data,
-    });
 
-    return transaction, receipt;
+
+//create
+async function createTransaction(userID, transactionData, donor, event, receiptData) {
+
+    return prisma.$transaction(async (tx) => {
+        // 1. Decrement amount from the sender.
+        const string = await getConfigStringByUser(userID);
+    
+        // 2. Verify that the sender's balance didn't go below zero.
+        if (string.length <= 0) {
+          throw new Error(`User does not have sufficient permissions to create a transaction.`);
+        }
+
+        receiptData.receiptNumber = string;
+        const transaction = await tx.transaction.create({
+            data:{
+                entryDate: transactionData.entryDate,
+                transactionDate: transactionData.transactionDate,
+                donor: { connect: { id: donor } },
+                createdBy: { connect: { GoogleId: userID } },
+                event: { connect: { id: event } },
+                paymentMethod: transactionData.paymentMethod,
+                amount: transactionData.amount,
+                referenceNumber: transactionData.referenceNumber,
+                transactionType: transactionData.transactionType,
+                status: transactionData.status,
+                email: transactionData.email,
+                name: transactionData.name,
+                sendDate: transactionData.sendDate,
+                note: transactionData.note,
+                donation: transactionData.donation,
+            }
+        })
+
+        const transactionReceipt = await tx.transactionReceipt.create({
+            data:{
+                email: receiptData.email,
+                name: receiptData.name,
+                sendDate: receiptData.sendDate,
+                transaction: { connect: { id: transaction.id } },
+                receiptNumber: string
+            }
+        })
+    
+        // 3. Increment the receipt number.
+        const config = await getConfigByUser(userID);
+        await incrementConfig(config[0].prefix, tx);
+
+    return { transaction, transactionReceipt }
+    });
 }
 
 

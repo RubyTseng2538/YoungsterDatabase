@@ -19,8 +19,10 @@ model User{
   GoogleId         String?       @unique
   name             String
   email            String        @unique
-  permission       Roles
+  receiptConfig    ReceiptConfig @relation(fields: [receiptPrefix], references: [prefix])
+  receiptPrefix    String
   eventsInCharge   Event[]
+  transactionsMade Transaction[]
 }
 
 model Donor {
@@ -59,6 +61,8 @@ model Transaction {
   referenceNumber String?
   transactionType TransactionType
   status          Status
+  createdBy       User                @relation(fields: [createdByID], references: [id])
+  createdByID     Int
   note            String?
 }
 
@@ -68,6 +72,22 @@ model TransactionReceipt {
   email         String
   name          String
   sendDate      DateTime
+}
+
+
+//work on receipt config (make it autoincrement after transaction)
+//get config based on user
+//save transaction
+//save receipt
+//update config
+//put all in one transaction
+
+model ReceiptConfig {
+  prefix String @id
+  nextNumber Int @default(1)
+  user User[]
+  name String @unique
+
 }
 
 enum PaymentMethod {

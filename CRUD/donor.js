@@ -1,5 +1,4 @@
 const { PrismaClient } = require("@prisma/client");
-const { data } = require("jquery");
 
 const prisma = new PrismaClient();
 

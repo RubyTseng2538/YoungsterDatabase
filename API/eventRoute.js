@@ -37,6 +37,7 @@ const eventMiddleware = (req,res,next) => {
 
 //get list of donor & get filter name | email
 router.get('/events' , async (req,res)=>{
+  try{
     const {searchText, DateOne, DateTwo, DeadlineOne, DeadlineTwo, DonorID} = req.query;
     console.log(req.query);
     // if(req.permissionLevel==0){
@@ -64,87 +65,128 @@ router.get('/events' , async (req,res)=>{
         res.send(await getActiveEvents());
       }
     // }
-    
+  }catch(error){
+    console.error('Error fetching events:', error);
+    res.status(500).send('Internal Server Error');
+  } 
     
  })
 
  //get filter id
- router.get('/events/:id' , eventCoordinators, eventMiddleware,async(req,res)=>{
-    const id = req.params.id;
-    if(req.permissionLevel==0){
-      console.log(req.eventIds);
-      if(req.eventIds.includes(id)){
-        res.json(await getEvent(id));
-      }else{
-        res.status(403).send('insufficient permissions');
+ router.get('/events/:id', eventCoordinators, eventMiddleware, async (req, res) => {
+  try {
+      const id = req.params.id;
+      if (req.permissionLevel == 0) {
+          console.log(req.eventIds);
+          if (req.eventIds.includes(id)) {
+              res.json(await getEvent(id));
+          } else {
+              res.status(403).send('insufficient permissions');
+          }
+      } else {
+          res.json(await getEvent(id));
       }
-    }else{
-      res.json(await getEvent(id));
-    }
- })
+  } catch (error) {
+      console.error('Error fetching event:', error);
+      res.status(500).send('Internal Server Error');
+  }
+});
 
+
+ //make a check that make sure deadline is before date.
  //create event
- router.post("/events", urlencodedParser, async(req, res)=>{
-  const data = req.body;
-   let eventName= data.eventName;
-   let eventDate= data.eventDate;
-   let eventDeadline = data.eventDeadline;
-   let fee = data.fee;
-   if(!eventDate||!eventName||!eventDeadline||!validateDate(eventDate)||!validateDate(eventDeadline)||(fee&&!isInt(fee))){
-    res.status(400).send('invalid entry')
-   }else{
-    let eventData = JSON.parse(JSON.stringify(req.body));
-    eventData.fee = parseInt(eventData.fee);
-    res.json(await createEvent(eventData));
-   }
- })
+ router.post("/events", urlencodedParser, async (req, res) => {
+  try {
+      const data = req.body;
+      let eventName = data.eventName;
+      let eventDate = data.eventDate;
+      let eventDeadline = data.eventDeadline;
+      let fee = data.fee;
+
+      if (!eventDate || !eventName || !eventDeadline || !validateDate(eventDate) || !validateDate(eventDeadline) || (fee && !isInt(fee))) {
+          res.status(400).send('invalid entry');
+      } else {
+          let eventData = JSON.parse(JSON.stringify(req.body));
+          eventData.fee = parseInt(eventData.fee);
+          res.json(await createEvent(eventData));
+      }
+  } catch (error) {
+      res.status(500).send('Internal Server Error');
+  }
+});
 
  //update event
- router.put('/events/:id', eventMiddleware, urlencodedParser, async(req, res)=>{
-   const id = req.params.id;
-   let data = req.body;
-   let entry = {};
-   if(data.eventDate&&validateDate(data.eventDate)){
-    entry["eventDate"] = data.eventDate;
-   }if(data.eventDeadline&&validateDate(data.eventDeadline)){
-    entry["eventDeadline"] = data.eventDeadline;
-   }if(data.eventName){
-    entry["eventName"] = data.eventName;
-   }if(data.fee&&isInt(data.fee)){
-    entry["fee"] = parseInt(data.fee);
-   }if(data.eventLocation){
-    entry["eventLocation"] = data.eventLocation;
-   }
-   if(!data.eventDate&&!data.eventDeadline&&!data.eventLocation&&!data.fee&&!data.eventName){
-    res.status(400).send('invalid entry');
-   }
-   console.log(entry);
-   res.json(await updateEvent(id, entry));
- })
+ router.put('/events/:id', eventMiddleware, urlencodedParser, async (req, res) => {
+  try {
+      const id = req.params.id;
+      let data = req.body;
+      let entry = {};
 
- router.put('/events/addAttendees/:id', eventMiddleware, urlencodedParser, async(req,res)=>{
-  const id = req.params.id;
-  let data = req.body;
-  if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
-    res.json(await addAttendees(id, parseInt(data.userID)))
-  }else{
-    res.status(400).send('invalid entry');
-  }
- })
+      if (data.eventDeadline) {
+          entry["eventDeadline"] = data.eventDeadline;
+      }
+      if (data.eventName) {
+          entry["eventName"] = data.eventName;
+      }
+      if (data.fee && isInt(data.fee)) {
+          entry["fee"] = parseInt(data.fee);
+      }
+      if (data.eventLocation) {
+          entry["eventLocation"] = data.eventLocation;
+      }
+      if (!data.eventDate && !data.eventDeadline && !data.eventLocation && !data.fee && !data.eventName) {
+          return res.status(400).send('invalid entry');
+      }
 
- router.put('/events/removeAttendees/:id', eventMiddleware, urlencodedParser, async(req,res)=>{
-  const id = req.params.id;
-  let data = req.body;
-  if(data.userID&&isInt(data.userID)&&getDonorById(parseInt(data.userID))){
-    res.json(await removeAttendees(id, parseInt(data.userID)))
-  }else{
-    res.status(400).send('invalid entry');
+      console.log(entry);
+      res.json(await updateEvent(id, entry));
+  } catch (error) {
+      console.error('Error updating event:', error);
+      res.status(500).send('Internal Server Error');
   }
- })
+});
+
+router.put('/events/addAttendees/:id', eventMiddleware, urlencodedParser, async (req, res) => {
+  try {
+      const id = req.params.id;
+      let data = req.body;
+
+      if (data.userID && isInt(data.userID) && await getDonorById(parseInt(data.userID))) {
+          res.json(await addAttendees(id, parseInt(data.userID)));
+      } else {
+          res.status(400).send('invalid entry');
+      }
+  } catch (error) {
+      console.error('Error adding attendees:', error);
+      res.status(500).send('Internal Server Error');
+  }
+});
+
+router.put('/events/removeAttendees/:id', eventMiddleware, urlencodedParser, async (req, res) => {
+  try {
+      const id = req.params.id;
+      let data = req.body;
+
+      if (data.userID && isInt(data.userID) && await getDonorById(parseInt(data.userID))) {
+          res.json(await removeAttendees(id, parseInt(data.userID)));
+      } else {
+          res.status(400).send('invalid entry');
+      }
+  } catch (error) {
+      console.error('Error removing attendees:', error);
+      res.status(500).send('Internal Server Error');
+  }
+});
 
  //delete donor
  router.delete('/events/:id', eventMiddleware, async(req, res)=>{
-   const id = req.params.id;
-   res.json(await deleteEvent(id))
+  try{
+    const id = req.params.id;
+    res.json(await deleteEvent(id))
+  }catch(error){
+    console.error('Error deleting event:', error);
+    res.status(500).send('Internal Server Error');
+  }
+   
  })
 module.exports=router;

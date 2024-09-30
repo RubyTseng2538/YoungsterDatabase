@@ -10,8 +10,6 @@ const { checkPermissionLevel } = require('./APIAuthorization');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-let filter = {};
-
 function isInt(value) {
     var x = parseFloat(value);
     return !isNaN(value) && (x | 0) === x;
@@ -85,7 +83,9 @@ const transactionMiddleware = (req,res,next) => {
 }
 
 router.get('/transaction', async (req,res)=>{
-    const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status} = req.query;
+  try{
+  let filter = {};  
+  const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status} = req.query;
     console.log(req.query);
     if(EntryDateOne&&EntryDateTwo&&validateDate2(EntryDateOne)&&validateDate2(EntryDateTwo)){
       filter.entryDate= {gte: EntryDateOne, lte: EntryDateTwo};
@@ -107,93 +107,110 @@ router.get('/transaction', async (req,res)=>{
     }else{
       res.send(await getDynamicFilteredTransactions(filter));
     }
-    
+  }catch(e){
+    res.status(500).send('Internal Server Error');
+  }
  })
 
  //get filter id
  router.get('/transaction/:id', transactionMiddleware,async(req,res)=>{
+  try{
     const id = req.params.id;
     res.json(await getTransaction(id))
+  }catch(e){
+    res.status(500).send('Internal Server Error');
+  }
  })
 
  router.get('/transactionReceipt', async(req,res)=>{
-  const {searchText} = req.query;
-  if(searchText){
-    res.send(await getReceiptsByString(searchText));
-  }else{
-    res.send(await getAllReceipts());
+  try{
+    const {searchText} = req.query;
+    if(searchText){
+      res.send(await getReceiptsByString(searchText));
+    }else{
+      res.send(await getAllReceipts());
+    }
+  }catch(e){
+    res.status(500).send('Internal Server Error');
   }
 })
 
 router.get('/transactionReceipt/:id', async(req,res)=>{
-  const receiptNumber = req.params.id;
-  if(await getReceipt(receiptNumber)){
-    res.json(await getReceipt(receiptNumber));
-  }else{
-    res.status(400).send('invalid receipt id');
+  try{
+    const receiptNumber = req.params.id;
+    if(await getReceipt(receiptNumber)){
+      res.json(await getReceipt(receiptNumber));
+    }else{
+      res.status(400).send('invalid receipt id');
+    }
+  }catch(e){
+    res.status(500).send('Internal Server Error');
   }
 })
 
  //create event
  router.post("/transaction", urlencodedParser, async(req, res)=>{
-  const data = req.body;
-  
-  let entryDate= data.entryDate;
-  let transactionDate = data.transactionDate;
-  let donorID= data.donorID;
-  let eventID = data.eventID;
-  let paymentMethod = convertStringToPaymentMethod(data.paymentMethod);
-  let amount = data.amount;
-  let receiptNumber = data.receiptNumber;
-  let referenceNumber = data.referenceNumber;
-  let transactionType = convertStringToTransactionType(data.transactionType);
-  let status = convertStringToStatus(data.status);
-  let email = data.email;
-  let name = data.name;
-  let sendDate = data.sendDate;
-  console.log(data, donation);
-  if(!entryDate||!donorID||!transactionDate||!paymentMethod||!validateDate(entryDate)||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||!email||!name||!receiptNumber||!sendDate||!validateDate(sendDate)||!validateEmail(email)||!transactionType||!status){
-    res.status(400).send('invalid entry');
-    res.end();
-  }else{
-    let transactionData = JSON.parse(JSON.stringify(req.body));
-    transactionData.amount = parseFloat(transactionData.amount);
-    transactionData.donorID = parseInt(transactionData.donorID);
-    transactionData.eventID = parseInt(transactionData.eventID);
-    transactionData.paymentMethod = convertStringToPaymentMethod(transactionData.paymentMethod);
-    transactionData.transactionType = convertStringToTransactionType(transactionData.transactionType);
-    transactionData.status = convertStringToStatus(transactionData.status);
+  try{
+    const data = req.body;
+    
+    let entryDate= data.entryDate;
+    let transactionDate = data.transactionDate;
+    let donorID= data.donorID;
+    let eventID = data.eventID;
+    let paymentMethod = convertStringToPaymentMethod(data.paymentMethod);
+    let amount = data.amount;
+    let referenceNumber = data.referenceNumber;
+    let transactionType = convertStringToTransactionType(data.transactionType);
+    let status = convertStringToStatus(data.status);
+    let email = data.email;
+    let name = data.name;
+    let sendDate = data.sendDate;
+    if(!entryDate||!donorID||!transactionDate||!paymentMethod||!validateDate(entryDate)||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||!email||!name||!sendDate||!validateDate(sendDate)||!validateEmail(email)||!transactionType||!status){
+      res.status(400).send('invalid entry');
+      res.end();
+    }else{
+      let transactionData = JSON.parse(JSON.stringify(req.body));
+      transactionData.amount = parseFloat(transactionData.amount);
+      transactionData.donorID = parseInt(transactionData.donorID);
+      transactionData.eventID = parseInt(transactionData.eventID);
+      transactionData.paymentMethod = convertStringToPaymentMethod(transactionData.paymentMethod);
+      transactionData.transactionType = convertStringToTransactionType(transactionData.transactionType);
+      transactionData.status = convertStringToStatus(transactionData.status);
 
-    let tData = {
-      entryDate: transactionData.entryDate,
-      transactionionDate: transactionData.transactionDate,
-      donorID: transactionData.donorID,
-      eventID: transactionData.eventID,
-      paymentMethod: transactionData.paymentMethod,
-      amount: transactionData.amount,
-      receiptID: transactionData.receiptNumber,
-      referenceNumber: transactionData.referenceNumber,
-      transactionType: transactionData.transactionType,
-      status: transactionData.status,
-      note: transactionData.note
+      let tData = {
+        entryDate: transactionData.entryDate,
+        transactionDate: transactionData.transactionDate,
+        paymentMethod: transactionData.paymentMethod,
+        amount: transactionData.amount,
+        referenceNumber: transactionData.referenceNumber,
+        transactionType: transactionData.transactionType,
+        status: transactionData.status,
+        note: transactionData.note
+      }
+
+      let rData = {
+        email: transactionData.email,
+        name: transactionData.name,
+        sendDate: transactionData.sendDate
+      }
+
+      console.log(tData, rData);
+      res.json(await createTransaction(req.user.id, tData, transactionData.donorID, transactionData.eventID, rData));
     }
-
-    let rData = {
-      receiptNumber: transactionData.receiptNumber,
-      email: transactionData.email,
-      name: transactionData.name,
-      sendDate: transactionData.sendDate
-    }
-
-    console.log(tData, rData);
-    res.json(await createTransaction(tData, rData));
+  }catch(e){
+    console.error('Error creating transaction:', e);
+    res.status(500).send('Internal Server Error');
   }
   
  })
 
  //delete transaction
  router.delete('/transaction/:id', transactionMiddleware, async(req, res)=>{
+  try{
    const id = req.params.id;
    res.json(await editTransaction(id, {status: Status.VOID}));
+  }catch(e){
+    res.status(500).send('Internal Server Error');
+  }
  })
 module.exports=router;

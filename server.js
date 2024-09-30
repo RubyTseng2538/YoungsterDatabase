@@ -4,7 +4,7 @@ const eventRoutes = require('./API/eventRoute');
 const transactionRoutes = require('./API/transactionRoute');
 
 
-const { isAuthenticated} = require('./API/APIAuthentication');
+const { isAuthenticated, checkUserInSystem} = require('./API/APIAuthentication');
 // Step 1: Import express-session
 
 
@@ -14,6 +14,7 @@ const port = 3000;
 // Note: Make sure the above code is placed before your routes that require authentication.
 
 app.use(isAuthenticated);
+app.use(checkUserInSystem);
 
 app.use('/api/v1', [donorRoutes, eventRoutes, transactionRoutes]);
 

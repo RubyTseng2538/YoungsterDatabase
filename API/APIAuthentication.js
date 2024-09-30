@@ -14,6 +14,7 @@ async function isAuthenticated(req, res, next) {
         // Extract the token from the cookie
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
+        console.log(token);
         if (!token) {
             return res.status(401).send('Token missing');
         }
@@ -25,7 +26,14 @@ async function isAuthenticated(req, res, next) {
         });
 
         const payload = ticket.getPayload();
+        console.log(payload);
         const userid = payload['sub'];
+        console.log('User ID:', userid);
+
+        req.user = {
+            id: userid,
+            email: payload['email']
+        }
 
         // Proceed to the next middleware or route handler
         next();
@@ -37,7 +45,7 @@ async function isAuthenticated(req, res, next) {
 
 async function checkUserInSystem(req, res, next) {
     try {
-        const user = req.cookies.user;
+        const user = req.user;
         console.log(user.id);
         console.log(user.email); 
         let userInSystem = await getUserById(user.id);
