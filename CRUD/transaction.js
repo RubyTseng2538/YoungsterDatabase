@@ -3,6 +3,8 @@ const { PrismaClient, PaymentMethod } = require("@prisma/client");
 const { deleteReceipt } = require('./transactionReceipt');
 const { incrementConfig, getConfigStringByUser, getConfigByUser } = require("./receiptConfig");
 const { get } = require("jquery");
+const sgMail = require('@sendgrid/mail')
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const prisma = new PrismaClient();
 
@@ -40,6 +42,7 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
                 donation: transactionData.donation,
             }
         })
+        // default receipt emial to donor's email
 
         const transactionReceipt = await tx.transactionReceipt.create({
             data:{
@@ -55,8 +58,48 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
         const config = await getConfigByUser(userID);
         await incrementConfig(config[0].prefix, tx);
 
+        if(config[0].autosend){
+            // send email
+            const msg = {
+                to: receiptData.email, // Change to your recipient
+                from: 'rubytseng.usa@gmail.com', // Change to your verified sender
+                dynamic_template_data: {
+
+                    "receiptNo":string,
+        
+                    "amount":transactionData.amount,
+        
+                    "paymentMethod":transactionData.paymentMethod,
+        
+                    "notes":transactionData.note,
+    
+        
+                 },
+                 template_id: "d-508dcb4116b04d519e48b1484e21efc8"
+              }
+              sgMail
+                .send(msg)
+                .then(() => {
+                  console.log('Email sent')
+                })
+                .catch((error) => {
+                  console.error(error)
+                })
+        }else{
+            const configuration = await tx.receiptConfig.update({
+                where: {
+                    prefix: config[0].prefix
+                },
+                data: {
+                    endpoint: { connect: { id: transaction.id }}
+                }
+            })
+        }
+
     return { transaction, transactionReceipt }
     });
+    // if autosend is true, send receipt email (use sendgrid)
+    // email status 
 }
 
 

@@ -102,12 +102,18 @@ router.get('/events' , async (req,res)=>{
       let eventDate = data.eventDate;
       let eventDeadline = data.eventDeadline;
       let fee = data.fee;
+      let eventStatus = data.eventStatus;
 
       if (!eventDate || !eventName || !eventDeadline || !validateDate(eventDate) || !validateDate(eventDeadline) || (fee && !isInt(fee))) {
           res.status(400).send('invalid entry');
       } else {
-          let eventData = JSON.parse(JSON.stringify(req.body));
-          eventData.fee = parseInt(eventData.fee);
+          let eventData = {
+              eventName,
+              eventDate,
+              eventDeadline,
+              fee,
+              eventStatus
+          }
           res.json(await createEvent(eventData));
       }
   } catch (error) {

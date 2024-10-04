@@ -155,47 +155,43 @@ router.get('/transactionReceipt/:id', async(req,res)=>{
     
     let entryDate= data.entryDate;
     let transactionDate = data.transactionDate;
-    let donorID= data.donorID;
-    let eventID = data.eventID;
+    let donorID= parseInt(data.donorID);
+    let eventID = parseInt(data.eventID);
     let paymentMethod = convertStringToPaymentMethod(data.paymentMethod);
-    let amount = data.amount;
+    let amount = parseInt(data.amount);
     let referenceNumber = data.referenceNumber;
     let transactionType = convertStringToTransactionType(data.transactionType);
     let status = convertStringToStatus(data.status);
     let email = data.email;
     let name = data.name;
     let sendDate = data.sendDate;
+    let note = data.note;
     if(!entryDate||!donorID||!transactionDate||!paymentMethod||!validateDate(entryDate)||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||!email||!name||!sendDate||!validateDate(sendDate)||!validateEmail(email)||!transactionType||!status){
       res.status(400).send('invalid entry');
       res.end();
     }else{
-      let transactionData = JSON.parse(JSON.stringify(req.body));
-      transactionData.amount = parseFloat(transactionData.amount);
-      transactionData.donorID = parseInt(transactionData.donorID);
-      transactionData.eventID = parseInt(transactionData.eventID);
-      transactionData.paymentMethod = convertStringToPaymentMethod(transactionData.paymentMethod);
-      transactionData.transactionType = convertStringToTransactionType(transactionData.transactionType);
-      transactionData.status = convertStringToStatus(transactionData.status);
 
       let tData = {
-        entryDate: transactionData.entryDate,
-        transactionDate: transactionData.transactionDate,
-        paymentMethod: transactionData.paymentMethod,
-        amount: transactionData.amount,
-        referenceNumber: transactionData.referenceNumber,
-        transactionType: transactionData.transactionType,
-        status: transactionData.status,
-        note: transactionData.note
+        entryDate,
+        transactionDate,
+        paymentMethod,
+        amount,
+        donorID,
+        eventID,
+        referenceNumber,
+        transactionType,
+        status,
+        note,
       }
 
       let rData = {
-        email: transactionData.email,
-        name: transactionData.name,
-        sendDate: transactionData.sendDate
+        email,
+        name,
+        sendDate,
       }
 
       console.log(tData, rData);
-      res.json(await createTransaction(req.user.id, tData, transactionData.donorID, transactionData.eventID, rData));
+      res.json(await createTransaction(req.user.id, tData, tData.donorID, tData.eventID, rData));
     }
   }catch(e){
     console.error('Error creating transaction:', e);
@@ -203,6 +199,8 @@ router.get('/transactionReceipt/:id', async(req,res)=>{
   }
   
  })
+
+ //new route for sending receipt via email
 
  //delete transaction
  router.delete('/transaction/:id', transactionMiddleware, async(req, res)=>{

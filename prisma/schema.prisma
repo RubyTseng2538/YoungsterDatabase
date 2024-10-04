@@ -33,6 +33,23 @@ model Donor {
   transactions Transaction[]
 }
 
+// ticket
+// add phonenum to donor 
+// {
+
+//   eventId: 1,
+//   name: '',
+//   phonenum:'',
+//   email:
+//   // random string unqie UUID
+//   ticketNumber: '',
+//   transactionId: 1,
+//   attended:false,
+//   checkinTime: null,
+//   notes: ''
+
+
+// }
 model Event {
   id            Int           @id @default(autoincrement())
   eventName     String
@@ -58,6 +75,8 @@ model Transaction {
   amount          Float
   receipt         TransactionReceipt? @relation(fields: [receiptID], references: [receiptNumber])
   receiptID       String?             @unique
+  config          ReceiptConfig?      @relation(fields: [configPrefix], references: [prefix])
+  configPrefix    String?
   referenceNumber String?
   transactionType TransactionType
   status          Status
@@ -82,12 +101,19 @@ model TransactionReceipt {
 //update config
 //put all in one transaction
 
+// boolean autosend
+// true: send receipt after transaction creation
+// false: create receipt but do not send
+// endpoint to send receipt (transactionId)
+
+
 model ReceiptConfig {
   prefix String @id
   nextNumber Int @default(1)
   user User[]
   name String @unique
-
+  autosend Boolean @default(false)
+  endpoint Transaction[]
 }
 
 enum PaymentMethod {
