@@ -28,7 +28,8 @@ model User{
 model Donor {
   id           Int           @id @default(autoincrement())
   email        String        @unique
-  name         String
+  name         String?
+  phonenum     String?
   events       Event[]
   transactions Transaction[]
 }
@@ -90,7 +91,7 @@ model TransactionReceipt {
   transaction   Transaction?
   email         String
   name          String
-  sendDate      DateTime
+  sendDate      DateTime  @default(now())
 }
 
 

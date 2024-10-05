@@ -4,7 +4,7 @@ const router = new Router();
 const {PaymentMethod, TransactionType, Status} = require("@prisma/client");
 
 const { getDonorById } = require('../CRUD/donor');
-const { getTransaction, createTransaction, deleteTransaction, getAllTransactions, getTransactionByNote, getTransactionByDonor, getTransactionByEvent, getTransactionByPaymentMethod, getTransactionByEntryDate, getTransactionByTransactionDate, getAllDonationTransaction, editTransaction, getDynamicFilteredTransactions } = require('../CRUD/transaction');
+const { getTransaction, createTransaction, getAllTransactions, manualSendReceipt, editTransaction, getDynamicFilteredTransactions } = require('../CRUD/transaction');
 const { getReceipt, getReceiptsByString, getAllReceipts } = require('../CRUD/transactionReceipt');
 const { checkPermissionLevel } = require('./APIAuthorization');
 
@@ -144,6 +144,16 @@ router.get('/transactionReceipt/:id', async(req,res)=>{
       res.status(400).send('invalid receipt id');
     }
   }catch(e){
+    res.status(500).send('Internal Server Error');
+  }
+})
+
+router.get('/transaction/sendReceipt/:id', transactionMiddleware, async(req,res)=>{
+  try{
+    const transactionID = req.params.id;
+    res.json(await manualSendReceipt(transactionID));
+  }
+  catch(e){
     res.status(500).send('Internal Server Error');
   }
 })

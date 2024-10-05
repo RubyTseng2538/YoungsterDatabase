@@ -35,9 +35,6 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
                 referenceNumber: transactionData.referenceNumber,
                 transactionType: transactionData.transactionType,
                 status: transactionData.status,
-                email: transactionData.email,
-                name: transactionData.name,
-                sendDate: transactionData.sendDate,
                 note: transactionData.note,
                 donation: transactionData.donation,
             }
@@ -102,6 +99,54 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
     // email status 
 }
 
+async function manualSendReceipt(transactionID){
+    return prisma.$transaction(async (tx) => {
+        const transaction = await tx.transaction.findUnique({
+            where:{
+                id: transactionID
+            }
+        })
+
+        if(transaction.configPrefix){
+            const receipt = await tx.transactionReceipt.update({
+                where:{
+                    receiptNumber: transaction.receiptID
+                },
+                data:{
+                    sendDate: new Date()
+                }
+            })
+            // send email
+            const msg = {
+                to: receipt.email, // Change to your recipient
+                from: 'rubytseng.usa@gmail.com',
+                dynamic_template_data: {
+                    "receiptNo":transaction.receiptID,
+                    "amount":transaction.amount,
+                    "paymentMethod":transaction.paymentMethod,
+                    "notes":transaction.note,
+                },
+                template_id: "d-508dcb4116b04d519e48b1484e21efc8"
+            
+            }
+            sgMail.send(msg).then(() => {console.log('Email sent')}).catch((error) => {console.error(error)})
+
+            await tx.transaction.update({
+                where:{
+                    id: transactionID
+                },
+                data:{
+                    configPrefix: null
+                }
+            })
+        }else{
+            throw new Error('Transaction does not have a saved endpoint.');
+        }
+        return transaction;
+    })
+    
+}
+
 
 //read
 async function getTransaction(id){
@@ -125,72 +170,6 @@ async function getDynamicFilteredTransactions(filters, pageNumber = 1, take = 10
     return transactions;
 }
 
-async function getTransactionByDonor(id){
-    const transactions = await prisma.transaction.findMany({
-        where:{
-            donorID: id
-        },
-    })
-    return transactions;
-}
-
-async function getTransactionByEvent(id){
-    const transactions = await prisma.transaction.findMany({
-        where:{
-            eventID: id
-        },
-    })
-    return transactions;
-}
-
-async function getTransactionByEntryDate(date1, date2){
-    return await prisma.transaction.findMany({
-        where: {
-          entryDate: {
-            lte: new Date(date2),
-            gte: new Date(date1),
-          },
-        },
-      });
-}
-
-async function getTransactionByTransactionDate(date1, date2){
-    return await prisma.transaction.findMany({
-        where: {
-          transactionDate: {
-            lte: new Date(date2),
-            gte: new Date(date1),
-          },
-        },
-      });
-}
-
-async function getTransactionByPaymentMethod(paymentMethod){
-    const transactions = await prisma.transaction.findMany({
-        where:{
-            paymentMethod: paymentMethod
-        },
-    })
-    return transactions;
-}
-
-async function getAllDonationTransaction(){
-    const transactions = await prisma.transaction.findMany({
-        where:{
-            donation: true
-        },
-    })
-    return transactions;
-}
-
-async function getTransactionByNote(note){
-    const transactions = await prisma.transaction.findMany({
-        where:{
-            note: {contains: note}
-        },
-    })
-    return transactions;
-}
 
 async function getAllTransactions(pageNumber = 1, take = 10) {
     const transactions = await prisma.transaction.findMany({
@@ -230,15 +209,9 @@ async function deleteTransaction(id){
 module.exports ={
     createTransaction,
     getTransaction,
-    getAllDonationTransaction,
     getAllTransactions,
-    getTransactionByDonor,
-    getTransactionByEvent,
-    getTransactionByNote,
-    getTransactionByPaymentMethod,
-    getTransactionByEntryDate,
-    getTransactionByTransactionDate,
     getDynamicFilteredTransactions, 
+    manualSendReceipt,
     editTransaction,
     deleteTransaction
 }
