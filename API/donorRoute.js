@@ -50,7 +50,13 @@ router.get('/donors', async (req, res) => {
  router.get('/donors/:id', donorMiddleware, async (req, res) => {
   try {
       const id = req.params.id;
-      res.json(await getDonorById(id));
+      const donor = await getDonorById(id);
+      if(donor==null){
+        console.log('Donor not found');
+            res.status(404).send('Donor not found');
+      }else{
+        res.json(donor);
+      }
   } catch (error) {
       res.status(500).send('Internal Server Error');
   }

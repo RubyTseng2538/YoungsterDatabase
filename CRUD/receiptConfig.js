@@ -85,6 +85,15 @@ async function getConfigByUser(userID){
     return config;
 }
 
+async function getTransactionIDByConfig(config){
+    const transaction = await prisma.transactionReceipt.findMany({
+        where:{
+            configPrefix: config
+        }
+    });
+    return transaction;
+}
+
 
 module.exports = {
     createConfig,
@@ -92,5 +101,6 @@ module.exports = {
     assignConfig,
     getConfigByPrefix,
     getConfigByUser,
-    getConfigStringByUser
+    getConfigStringByUser,
+    getTransactionIDByConfig
 };

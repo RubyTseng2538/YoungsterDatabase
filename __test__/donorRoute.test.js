@@ -57,6 +57,35 @@ describe('Donor Routes', () => {
         expect(getDonorById).toHaveBeenCalledWith(1);
     });
 
+    test('GET /api/donors/:id should return 404 if donor not found', async () => {
+        getDonorById.mockResolvedValue(null);
+    
+        const response = await request(app).get('/api/donors/999');
+    
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({ error: 'Donor not found' });
+        expect(getDonorById).toHaveBeenCalledWith(999);
+    });
+    
+    // Test for invalid donor ID
+    test('GET /api/donors/:id should return 400 for invalid donor ID', async () => {
+        const response = await request(app).get('/api/donors/invalid-id');
+    
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ error: 'invalid id' });
+    });
+    
+    // Test for internal server error
+    test('GET /api/donors should return 500 if there is a server error', async () => {
+        getAllDonors.mockRejectedValue(new Error('Internal Server Error'));
+    
+        const response = await request(app).get('/api/donors');
+    
+        expect(response.status).toBe(500);
+        expect(response.body).toEqual({ error: 'Internal Server Error' });
+        expect(getAllDonors).toHaveBeenCalledTimes(1);
+    });
+
     test('POST /api/donors should create a new donor', async () => {
         const newDonor = { id: 1, name: 'John Doe', email: 'john@example.com' };
         createDonor.mockResolvedValue(newDonor);
