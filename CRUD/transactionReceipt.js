@@ -1,6 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
+const sgMail = require('@sendgrid/mail')
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 //create
 async function createReceipt(data) {
@@ -11,7 +13,8 @@ async function createReceipt(data) {
 }
 
 
-//read
+//read'
+
 async function getReceipt(receiptNumber){
     const receipt = await prisma.transactionReceipt.findUnique({
         where:{
@@ -43,6 +46,77 @@ async function getAllReceipts(){
     return receipts;
 }
 
+//update transaction to allow changes to send receipt
+async function createOrUpdateReceipt(transactionID, data, tx=prisma){
+    return tx.$transaction(async (tx) => {
+        const transaction = await tx.transaction.findUnique({
+            where:{
+                id: transactionID
+            }
+        })
+        if(transaction.status == Status.COMPLETED){
+            if(transaction.receiptID){
+                const receipt = await tx.transactionReceipt.update({
+                    where:{
+                        receiptNumber: transaction.receiptID
+                    },
+                    data:{
+                        email: receiptData.email,
+                        name: receiptData.name,
+                        sendDate: new Date()
+                    }
+                })
+            }else{
+                const string = await getConfigStringByUser(userID);
+        
+            // 2. Verify that the sender's balance didn't go below zero.
+                if (string.length <= 0) {
+                throw new Error(`User does not have sufficient permissions to create a transaction.`);
+                }
+                const receipt = await tx.transactionReceipt.create({
+                    data:{
+                        email: data.email,
+                        name: data.name,
+                        sendDate: new Date(),
+                        transaction: { connect: { id: transaction.id } },
+                        receiptNumber: string
+                    }
+                })
+                const config = await getConfigByUser(userID);
+                await incrementConfig(config[0].prefix, tx);
+            }
+            const msg = {
+                to: receiptData.email, // Change to your recipient
+                from: 'rubytseng.usa@gmail.com', // Change to your verified sender
+                dynamic_template_data: {
+
+                    "receiptNo":transaction.receiptID,
+        
+                    "amount":transaction.amount,
+        
+                    "paymentMethod":transaction.paymentMethod,
+        
+                    "notes":transaction.note,
+    
+        
+                },
+                template_id: process.env.TEMPLATE_ID
+            }
+            sgMail
+                .send(msg)
+                .then(() => {
+                console.log('Email sent')
+                })
+                .catch((error) => {
+                console.error(error)
+                })
+        
+    }else{
+        throw new Error('Transaction is not completed');
+    }
+})
+}
+
 //delete
 async function deleteReceipt(receiptNumber){
     const receipt = await prisma.transactionReceipt.delete({
@@ -57,5 +131,23 @@ module.exports={
     getReceipt,
     getReceiptsByString,
     getAllReceipts,
-    deleteReceipt
+    deleteReceipt,
+    createOrUpdateReceipt
 }
+
+//
+//  {
+//     donor:'Eugene',
+//     amount:100,
+//  }
+ // update or create
+//  api/create/receipt/:transId
+//  {
+//     name:'eguene'
+//     email:'sdsads'
+//  }
+//  only completed trransction can generated receipt
+//  1000 get receipt by transId
+//  yes -> update receipt info -> send receipt 
+//  no -> create new receipt  ->  send receip
+t

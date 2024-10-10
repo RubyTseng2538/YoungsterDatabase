@@ -5,7 +5,7 @@ const {PaymentMethod, TransactionType, Status} = require("@prisma/client");
 
 const { getDonorById } = require('../CRUD/donor');
 const { getTransaction, createTransaction, getAllTransactions, manualSendReceipt, editTransaction, getDynamicFilteredTransactions } = require('../CRUD/transaction');
-const { getReceipt, getReceiptsByString, getAllReceipts } = require('../CRUD/transactionReceipt');
+const { getReceipt, getReceiptsByString, getAllReceipts, createOrUpdateReceipt } = require('../CRUD/transactionReceipt');
 const { checkPermissionLevel } = require('./APIAuthorization');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
@@ -211,6 +211,39 @@ router.get('/transaction/sendReceipt/:id', transactionMiddleware, async(req,res)
  })
 
  //new route for sending receipt via email
+ router.post('/transaction/sendReceipt/:id', transactionMiddleware, urlencodedParser, async(req, res)=>{
+  try{
+    const transactionID = req.params.id;
+    if(transactionID&&isInt(transactionID)){
+      res.json(await manualSendReceipt(transactionID));
+    }else{
+      res.status(400).send('invalid transaction id');
+    }
+  }catch(e){
+    res.status(500).send('Internal Server Error');
+  }
+ })
+
+router.post('/transaction/createOrUpdate/:id', transactionMiddleware, urlencodedParser, async(req, res)=>{
+  try{
+    const transactionID = req.params.id;
+    if(transactionID&&isInt(transactionID)){
+      const data = req.body;
+      let name = data.name;
+      let email = data.email;
+      if(name||(email&&validateEmail(email))){
+        res.json(await createOrUpdateReceipt(transactionID, {name, email}));
+      }else{
+        res.status(400).send('invalid entry');
+      }
+    }else{
+      res.status(400).send('invalid transaction id');
+    }
+
+  }catch(e){
+    res.status(500).send('Internal Server Error');
+  }
+})
 
  //delete transaction
  router.delete('/transaction/:id', transactionMiddleware, async(req, res)=>{

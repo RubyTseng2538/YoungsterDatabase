@@ -1,4 +1,4 @@
-const { PrismaClient, PaymentMethod } = require("@prisma/client");
+const { PrismaClient, PaymentMethod, Status } = require("@prisma/client");
 
 const { deleteReceipt } = require('./transactionReceipt');
 const { incrementConfig, getConfigStringByUser, getConfigByUser } = require("./receiptConfig");
@@ -25,7 +25,6 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
         receiptData.receiptNumber = string;
         const transaction = await tx.transaction.create({
             data:{
-                entryDate: transactionData.entryDate,
                 transactionDate: transactionData.transactionDate,
                 donor: { connect: { id: donor } },
                 createdBy: { connect: { GoogleId: userID } },
@@ -39,59 +38,52 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
                 donation: transactionData.donation,
             }
         })
-        // default receipt emial to donor's email
 
-        const transactionReceipt = await tx.transactionReceipt.create({
-            data:{
-                email: receiptData.email,
-                name: receiptData.name,
-                sendDate: receiptData.sendDate,
-                transaction: { connect: { id: transaction.id } },
-                receiptNumber: string
-            }
-        })
-    
-        // 3. Increment the receipt number.
-        const config = await getConfigByUser(userID);
-        await incrementConfig(config[0].prefix, tx);
-
-        if(config[0].autosend){
-            // send email
-            const msg = {
-                to: receiptData.email, // Change to your recipient
-                from: 'rubytseng.usa@gmail.com', // Change to your verified sender
-                dynamic_template_data: {
-
-                    "receiptNo":string,
-        
-                    "amount":transactionData.amount,
-        
-                    "paymentMethod":transactionData.paymentMethod,
-        
-                    "notes":transactionData.note,
-    
-        
-                 },
-                 template_id: "d-508dcb4116b04d519e48b1484e21efc8"
-              }
-              sgMail
-                .send(msg)
-                .then(() => {
-                  console.log('Email sent')
-                })
-                .catch((error) => {
-                  console.error(error)
-                })
-        }else{
-            const configuration = await tx.receiptConfig.update({
-                where: {
-                    prefix: config[0].prefix
-                },
-                data: {
-                    endpoint: { connect: { id: transaction.id }}
+        if(receiptData.email){
+        // default receipt email to donor's email
+            const transactionReceipt = await tx.transactionReceipt.create({
+                data:{
+                    email: receiptData.email,
+                    name: receiptData.name,
+                    sendDate: new Date(),
+                    transaction: { connect: { id: transaction.id } },
+                    receiptNumber: string
                 }
             })
+        
+            // 3. Increment the receipt number.
+            const config = await getConfigByUser(userID);
+            await incrementConfig(config[0].prefix, tx);
+            // status === completed
+            if(transactionData.status === 'COMPLETED' &&  config[0].autosend){
+                // send email
+                const msg = {
+                    to: receiptData.email, // Change to your recipient
+                    from: 'rubytseng.usa@gmail.com', // Change to your verified sender
+                    dynamic_template_data: {
+
+                        "receiptNo":string,
+            
+                        "amount":transactionData.amount,
+            
+                        "paymentMethod":transactionData.paymentMethod,
+            
+                        "notes":transactionData.note,
+        
+            
+                    },
+                    template_id: process.env.TEMPLATE_ID
+                }
+                sgMail
+                    .send(msg)
+                    .then(() => {
+                    console.log('Email sent')
+                    })
+                    .catch((error) => {
+                    console.error(error)
+                    })
         }
+    }
 
     return { transaction, transactionReceipt }
     });
@@ -106,8 +98,7 @@ async function manualSendReceipt(transactionID){
                 id: transactionID
             }
         })
-
-        if(transaction.configPrefix){
+        if(transaction.status == Status.COMPLETED){
             const receipt = await tx.transactionReceipt.update({
                 where:{
                     receiptNumber: transaction.receiptID
@@ -139,8 +130,6 @@ async function manualSendReceipt(transactionID){
                     configPrefix: null
                 }
             })
-        }else{
-            throw new Error('Transaction does not have a saved endpoint.');
         }
         return transaction;
     })
@@ -184,6 +173,7 @@ async function getAllTransactions(pageNumber = 1, take = 10) {
 
 
 //update
+//can only update transaction status
 async function editTransaction(id, data){
     const event = await prisma.event.update({
         where:{
@@ -215,3 +205,5 @@ module.exports ={
     editTransaction,
     deleteTransaction
 }
+
+
