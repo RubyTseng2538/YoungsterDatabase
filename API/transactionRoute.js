@@ -163,7 +163,6 @@ router.get('/transaction/sendReceipt/:id', transactionMiddleware, async(req,res)
   try{
     const data = req.body;
     
-    let entryDate= data.entryDate;
     let transactionDate = data.transactionDate;
     let donorID= parseInt(data.donorID);
     let eventID = parseInt(data.eventID);
@@ -176,13 +175,30 @@ router.get('/transaction/sendReceipt/:id', transactionMiddleware, async(req,res)
     let name = data.name;
     let sendDate = data.sendDate;
     let note = data.note;
-    if(!entryDate||!donorID||!transactionDate||!paymentMethod||!validateDate(entryDate)||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||!email||!name||!sendDate||!validateDate(sendDate)||!validateEmail(email)||!transactionType||!status){
+    if(!donorID||!transactionDate||!paymentMethod||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||!transactionType||!status){
       res.status(400).send('invalid entry');
       res.end();
-    }else{
+    }
+    if(email&&!validateEmail(email)){
+      res.status(400).send('invalid email');
+      res.end();
+    }if(!email){
+      let tData = {
+        transactionDate,
+        paymentMethod,
+        amount,
+        donorID,
+        eventID,
+        referenceNumber,
+        transactionType,
+        status,
+        note,
+      }
+      res.json(await createTransaction(req.user.id, tData, tData.donorID, tData.eventID));
+    }
+    else{
 
       let tData = {
-        entryDate,
         transactionDate,
         paymentMethod,
         amount,
@@ -196,11 +212,9 @@ router.get('/transaction/sendReceipt/:id', transactionMiddleware, async(req,res)
 
       let rData = {
         email,
-        name,
-        sendDate,
+        name
       }
 
-      console.log(tData, rData);
       res.json(await createTransaction(req.user.id, tData, tData.donorID, tData.eventID, rData));
     }
   }catch(e){
@@ -225,14 +239,14 @@ router.get('/transaction/sendReceipt/:id', transactionMiddleware, async(req,res)
  })
 
 router.post('/transaction/createOrUpdate/:id', transactionMiddleware, urlencodedParser, async(req, res)=>{
-  try{
+  // try{
     const transactionID = req.params.id;
     if(transactionID&&isInt(transactionID)){
       const data = req.body;
       let name = data.name;
       let email = data.email;
       if(name||(email&&validateEmail(email))){
-        res.json(await createOrUpdateReceipt(transactionID, {name, email}));
+        res.json(await createOrUpdateReceipt(transactionID, {name, email}, req.user.id));
       }else{
         res.status(400).send('invalid entry');
       }
@@ -240,9 +254,9 @@ router.post('/transaction/createOrUpdate/:id', transactionMiddleware, urlencoded
       res.status(400).send('invalid transaction id');
     }
 
-  }catch(e){
-    res.status(500).send('Internal Server Error');
-  }
+  // }catch(e){
+  //   res.status(500).send('Internal Server Error');
+  // }
 })
 
  //delete transaction

@@ -22,9 +22,9 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
           throw new Error(`User does not have sufficient permissions to create a transaction.`);
         }
 
-        receiptData.receiptNumber = string;
         const transaction = await tx.transaction.create({
             data:{
+                entryDate: new Date(),
                 transactionDate: transactionData.transactionDate,
                 donor: { connect: { id: donor } },
                 createdBy: { connect: { GoogleId: userID } },
@@ -39,7 +39,7 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
             }
         })
 
-        if(receiptData.email){
+        if(receiptData&&receiptData.email){
         // default receipt email to donor's email
             const transactionReceipt = await tx.transactionReceipt.create({
                 data:{
@@ -85,7 +85,7 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
         }
     }
 
-    return { transaction, transactionReceipt }
+    return { transaction };
     });
     // if autosend is true, send receipt email (use sendgrid)
     // email status 

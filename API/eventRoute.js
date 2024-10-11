@@ -73,19 +73,10 @@ router.get('/events' , async (req,res)=>{
  })
 
  //get filter id
- router.get('/events/:id', eventCoordinators, eventMiddleware, async (req, res) => {
+ router.get('/events/:id', eventMiddleware, async (req, res) => {
   try {
       const id = req.params.id;
-      if (req.permissionLevel == 0) {
-          console.log(req.eventIds);
-          if (req.eventIds.includes(id)) {
-              res.json(await getEvent(id));
-          } else {
-              res.status(403).send('insufficient permissions');
-          }
-      } else {
-          res.json(await getEvent(id));
-      }
+      res.json(await getEvent(id));
   } catch (error) {
       console.error('Error fetching event:', error);
       res.status(500).send('Internal Server Error');
@@ -111,7 +102,7 @@ router.get('/events' , async (req,res)=>{
               eventName,
               eventDate,
               eventDeadline,
-              fee,
+              fee: parseInt(fee),
               eventStatus
           }
           res.json(await createEvent(eventData));
@@ -188,7 +179,8 @@ router.put('/events/removeAttendees/:id', eventMiddleware, urlencodedParser, asy
  router.delete('/events/:id', eventMiddleware, async(req, res)=>{
   try{
     const id = req.params.id;
-    res.json(await deleteEvent(id))
+    res.json(await deleteEvent(id));
+    res.status(204).send('Event deleted');
   }catch(error){
     console.error('Error deleting event:', error);
     res.status(500).send('Internal Server Error');

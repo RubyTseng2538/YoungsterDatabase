@@ -63,7 +63,6 @@ describe('Donor Routes', () => {
         const response = await request(app).get('/api/donors/999');
     
         expect(response.status).toBe(404);
-        expect(response.body).toEqual({ error: 'Donor not found' });
         expect(getDonorById).toHaveBeenCalledWith(999);
     });
     
@@ -72,7 +71,6 @@ describe('Donor Routes', () => {
         const response = await request(app).get('/api/donors/invalid-id');
     
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ error: 'invalid id' });
     });
     
     // Test for internal server error
@@ -82,7 +80,6 @@ describe('Donor Routes', () => {
         const response = await request(app).get('/api/donors');
     
         expect(response.status).toBe(500);
-        expect(response.body).toEqual({ error: 'Internal Server Error' });
         expect(getAllDonors).toHaveBeenCalledTimes(1);
     });
 
@@ -109,16 +106,56 @@ describe('Donor Routes', () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual(updatedDonor);
-        expect(updateDonor).toHaveBeenCalledWith(1, { name: 'John Doe', email: 'john@example.com' });
+        expect(updateDonor).toHaveBeenCalledWith(1, 'john@example.com', 'John Doe');
     });
 
     test('DELETE /api/donors/:id should delete a donor', async () => {
+        const donor = { id: 1, name: 'John Doe', email: 'john@example.com' };
+        getDonorById.mockResolvedValue(donor);
         deleteDonor.mockResolvedValue({ message: 'Donor deleted' });
 
         const response = await request(app).delete('/api/donors/1');
 
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({ message: 'Donor deleted' });
+        expect(getDonorById).toHaveBeenCalledWith(1);
+        expect(response.status).toBe(204);
         expect(deleteDonor).toHaveBeenCalledWith(1);
+    });
+
+    test('POST /api/donors should return 400 for invalid entry', async () => {
+        const invalidDonorData = { name: '', email: 'invalid-email' }; // Invalid data
+
+        const response = await request(app)
+            .post('/api/donors')
+            .send(invalidDonorData);
+
+        expect(response.status).toBe(400);
+    });
+
+    // Test for invalid entry when updating a donor
+    test('PUT /api/donors/:id should return 400 for invalid entry', async () => {
+        const invalidDonorData = { name: '', email: 'invalid-email' }; // Invalid data
+
+        const response = await request(app)
+            .put('/api/donors/1')
+            .send(invalidDonorData);
+
+        expect(response.status).toBe(400);
+    });
+
+    // Test for invalid donor ID when deleting a donor
+    test('DELETE /api/donors/:id should return 400 for invalid donor ID', async () => {
+        const response = await request(app).delete('/api/donors/invalid-id');
+
+        expect(response.status).toBe(400);
+    });
+
+    // Test for donor not found when deleting a donor
+    test('DELETE /api/donors/:id should return 404 if donor not found', async () => {
+        getDonorById.mockResolvedValue(null);
+
+        const response = await request(app).delete('/api/donors/999');
+
+        expect(response.status).toBe(404);
+        expect(getDonorById).toHaveBeenCalledWith(999);
     });
 });

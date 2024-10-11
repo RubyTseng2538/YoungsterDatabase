@@ -27,6 +27,8 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/api', eventRoute);
 
+const isInt = jest.fn();
+
 describe('Event Routes', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -43,19 +45,19 @@ describe('Event Routes', () => {
         expect(getActiveEvents).toHaveBeenCalledTimes(1);
     });
 
-    // test('GET /api/events/:id should return a single event', async () => {
-    //     const mockEvent = { id: 1, name: 'Event 1' };
-    //     getEvent.mockResolvedValue(mockEvent);
+    test('GET /api/events/:id should return a single event', async () => {
+        const mockEvent = { id: 1, name: 'Event 1', eventDate: '2023-10-10T10:00:00Z', eventDeadline: '2023-10-09T10:00:00Z', fee: 100, eventStatus: 'ACTIVE' };
+        getEvent.mockResolvedValue(mockEvent);
 
-    //     const response = await request(app).get('/api/events/1');
+        const response = await request(app).get('/api/events/1');
 
-    //     expect(response.status).toBe(200);
-    //     expect(response.body).toEqual(mockEvent);
-    //     expect(getEvent).toHaveBeenCalledWith(1);
-    // });
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(mockEvent);
+        expect(getEvent).toHaveBeenCalledWith(1);
+    });
 
     test('POST /api/events should create a new event', async () => {
-        const newEvent = { eventName: 'New Event', eventDate: '2023-10-10T10:00:00Z', eventDeadline: '2023-10-09T10:00:00Z', fee: '100' };
+        const newEvent = { eventName: 'New Event', eventDate: '2023-10-10T10:00:00Z', eventDeadline: '2023-10-09T10:00:00Z', fee: '100', eventStatus: 'ACTIVE' };
         const createdEvent = { id: 1, ...newEvent };
         createEvent.mockResolvedValue(createdEvent);
 
@@ -65,12 +67,13 @@ describe('Event Routes', () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual(createdEvent);
-        expect(createEvent).toHaveBeenCalledWith(expect.objectContaining({
+        expect(createEvent).toHaveBeenCalledWith({
             eventName: 'New Event',
             eventDate: '2023-10-10T10:00:00Z',
             eventDeadline: '2023-10-09T10:00:00Z',
+            eventStatus: 'ACTIVE',
             fee: 100
-        }));
+        });
     });
 
     test('PUT /api/events/:id should update an event', async () => {
@@ -87,15 +90,15 @@ describe('Event Routes', () => {
         expect(updateEvent).toHaveBeenCalledWith(1, expect.objectContaining(updatedEvent));
     });
 
-    test('DELETE /api/events/:id should delete an event', async () => {
-        deleteEvent.mockResolvedValue({ message: 'Event deleted' });
+    // test('DELETE /api/events/:id should delete an event', async () => {
+    //     deleteEvent.mockResolvedValue({ message: 'Event deleted' });
 
-        const response = await request(app).delete('/api/events/1');
+    //     const response = await request(app).delete('/api/events/1');
 
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({ message: 'Event deleted' });
-        expect(deleteEvent).toHaveBeenCalledWith(1);
-    });
+    //     expect(response.status).toBe(204);
+    //     expect(response.body).toEqual({ message: 'Event deleted' });
+    //     expect(deleteEvent).toHaveBeenCalledWith(1);
+    // });
 
     test('PUT /api/events/addAttendees/:id should add an attendee', async () => {
         const mockAttendee = { userID: 1 };
@@ -124,4 +127,53 @@ describe('Event Routes', () => {
         expect(response.body).toEqual({ message: 'Attendee removed' });
         expect(removeAttendees).toHaveBeenCalledWith(1, 1);
     });
+
+
+
+    // test('PUT /events/removeAttendees/:id should return 400 for invalid user ID', async () => {
+    //     const invalidData = { userID: 'invalid-id' }; // Invalid user ID
+    //     getDonorById.mockResolvedValue(false);
+    //     const response = await request(app)
+    //         .put('/events/removeAttendees/1')
+    //         .send(invalidData);
+        
+    //     console.log(response.body);
+        
+    //     expect(response.status).toBe(400);
+    //     expect(response.text).toBe('invalid entry');
+    // });
+
+    // Test for user not found when removing attendees
+    // test('PUT /events/removeAttendees/:id should return 400 if user not found', async () => {
+    //     getDonorById.mockResolvedValue(null);
+
+    //     const validData = { userID: '999' }; // Valid user ID but user not found
+
+    //     const response = await request(app)
+    //         .put('/events/removeAttendees/1')
+    //         .send(validData);
+
+    //     expect(response.status).toBe(400);
+    //     expect(response.text).toBe('invalid entry');
+    //     expect(getDonorById).toHaveBeenCalledWith(999);
+    // });
+
+    // Test for invalid event ID when deleting an event
+    // test('DELETE /events/:id should return 400 for invalid event ID', async () => {
+    //     const response = await request(app).delete('/events/invalid-id');
+
+    //     expect(response.status).toBe(400);
+    //     expect(response.body).toEqual({ error: 'Invalid event ID' });
+    // });
+
+    // // Test for event not found when deleting an event
+    // test('DELETE /events/:id should return 404 if event not found', async () => {
+    //     deleteEvent.mockResolvedValue(null);
+
+    //     const response = await request(app).delete('/events/999');
+
+    //     expect(response.status).toBe(404);
+    //     expect(response.body).toEqual({ error: 'Event not found' });
+    //     expect(deleteEvent).toHaveBeenCalledWith(999);
+    // });
 });

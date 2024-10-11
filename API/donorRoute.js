@@ -52,7 +52,6 @@ router.get('/donors', async (req, res) => {
       const id = req.params.id;
       const donor = await getDonorById(id);
       if(donor==null){
-        console.log('Donor not found');
             res.status(404).send('Donor not found');
       }else{
         res.json(donor);
@@ -77,7 +76,7 @@ router.get('/donors', async (req, res) => {
 });
 
  //update donor
- router.put('/donors/:id', urlencodedParser, async (req, res) => {
+ router.put('/donors/:id', donorMiddleware, urlencodedParser, async (req, res) => {
   try {
       const id = req.params.id;
       const { name, email } = req.body;
@@ -92,11 +91,16 @@ router.get('/donors', async (req, res) => {
 });
 
  //delete donor
- router.delete('/donors/:id', async (req, res) => {
+ router.delete('/donors/:id', donorMiddleware, async (req, res) => {
   try {
       const id = req.params.id;
-      await deleteDonor(id);
-      res.status(204).send();
+      const donor = await getDonorById(id);
+      if(donor==null){
+            res.status(404).send('Donor not found');
+      }else{
+        await deleteDonor(id);
+        res.status(204).send();
+      }
   } catch (error) {
       res.status(500).send('Internal Server Error');
   }

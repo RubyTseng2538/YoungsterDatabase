@@ -1,7 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
-const sgMail = require('@sendgrid/mail')
+const { incrementConfig, getConfigStringByUser, getConfigByUser } = require("./receiptConfig");
+const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 //create
@@ -47,25 +48,50 @@ async function getAllReceipts(){
 }
 
 //update transaction to allow changes to send receipt
-async function createOrUpdateReceipt(transactionID, data, tx=prisma){
+async function createOrUpdateReceipt(transactionID, data, userID ,tx=prisma){
     return tx.$transaction(async (tx) => {
         const transaction = await tx.transaction.findUnique({
             where:{
                 id: transactionID
             }
         })
-        if(transaction.status == Status.COMPLETED){
+        if(transaction.status == "COMPLETED"){
             if(transaction.receiptID){
                 const receipt = await tx.transactionReceipt.update({
                     where:{
                         receiptNumber: transaction.receiptID
                     },
                     data:{
-                        email: receiptData.email,
-                        name: receiptData.name,
+                        email: data.email,
+                        name: data.name,
                         sendDate: new Date()
                     }
                 })
+                const msg = {
+                    to: data.email, // Change to your recipient
+                    from: 'rubytseng.usa@gmail.com', // Change to your verified sender
+                    dynamic_template_data: {
+    
+                        "receiptNo":transaction.receiptID,
+            
+                        "amount":transaction.amount,
+            
+                        "paymentMethod":transaction.paymentMethod,
+            
+                        "notes":transaction.note,
+        
+            
+                    },
+                    template_id: process.env.TEMPLATE_ID
+                }
+                sgMail
+                    .send(msg)
+                    .then(() => {
+                    console.log('Email sent')
+                    })
+                    .catch((error) => {
+                    console.error(error)
+                    })
             }else{
                 const string = await getConfigStringByUser(userID);
         
@@ -84,32 +110,33 @@ async function createOrUpdateReceipt(transactionID, data, tx=prisma){
                 })
                 const config = await getConfigByUser(userID);
                 await incrementConfig(config[0].prefix, tx);
-            }
-            const msg = {
-                to: receiptData.email, // Change to your recipient
-                from: 'rubytseng.usa@gmail.com', // Change to your verified sender
-                dynamic_template_data: {
-
-                    "receiptNo":transaction.receiptID,
-        
-                    "amount":transaction.amount,
-        
-                    "paymentMethod":transaction.paymentMethod,
-        
-                    "notes":transaction.note,
+                const msg = {
+                    to: data.email, // Change to your recipient
+                    from: 'rubytseng.usa@gmail.com', // Change to your verified sender
+                    dynamic_template_data: {
     
+                        "receiptNo":string,
+            
+                        "amount":transaction.amount,
+            
+                        "paymentMethod":transaction.paymentMethod,
+            
+                        "notes":transaction.note,
         
-                },
-                template_id: process.env.TEMPLATE_ID
+            
+                    },
+                    template_id: process.env.TEMPLATE_ID
+                }
+                sgMail
+                    .send(msg)
+                    .then(() => {
+                    console.log('Email sent')
+                    })
+                    .catch((error) => {
+                    console.error(error)
+                    })
             }
-            sgMail
-                .send(msg)
-                .then(() => {
-                console.log('Email sent')
-                })
-                .catch((error) => {
-                console.error(error)
-                })
+            
         
     }else{
         throw new Error('Transaction is not completed');
@@ -150,4 +177,3 @@ module.exports={
 //  1000 get receipt by transId
 //  yes -> update receipt info -> send receipt 
 //  no -> create new receipt  ->  send receip
-t
