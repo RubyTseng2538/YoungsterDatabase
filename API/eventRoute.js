@@ -76,7 +76,12 @@ router.get('/events' , async (req,res)=>{
  router.get('/events/:id', eventMiddleware, async (req, res) => {
   try {
       const id = req.params.id;
-      res.json(await getEvent(id));
+      const event = await getEvent(id);
+      if(event==null){
+            res.status(404).send('Event not found');
+      }else{
+        res.json(event);
+      }
   } catch (error) {
       console.error('Error fetching event:', error);
       res.status(500).send('Internal Server Error');
@@ -119,7 +124,10 @@ router.get('/events' , async (req,res)=>{
       let data = req.body;
       let entry = {};
 
-      if (data.eventDeadline) {
+      if(data.eventDate&&validateDate(data.eventDate)){
+        entry["eventDate"]=data.eventDate;
+      }
+      if (data.eventDeadline&&validateDate(data.eventDeadline)) {
           entry["eventDeadline"] = data.eventDeadline;
       }
       if (data.eventName) {
@@ -130,8 +138,10 @@ router.get('/events' , async (req,res)=>{
       }
       if (data.eventLocation) {
           entry["eventLocation"] = data.eventLocation;
+      }if(data.eventStatus && (data.eventStatus=="ACTIVE"||data.eventStatus=="INACTIVE")){
+        entry["eventStatus"]=data.event;
       }
-      if (!data.eventDate && !data.eventDeadline && !data.eventLocation && !data.fee && !data.eventName) {
+      if (!(data.eventDate&&validateDate(data.eventDate)) && !(data.eventDeadline&&validateDate(data.eventDeadline)) && !data.eventLocation && !(data.fee&&isInt(data.fee) )&& !data.eventName) {
           return res.status(400).send('invalid entry');
       }
 
@@ -179,10 +189,14 @@ router.put('/events/removeAttendees/:id', eventMiddleware, urlencodedParser, asy
  router.delete('/events/:id', eventMiddleware, async(req, res)=>{
   try{
     const id = req.params.id;
-    res.json(await deleteEvent(id));
-    res.status(204).send('Event deleted');
+    const event = await getEvent(id);
+    if(event==null){
+      res.status(404).send('Event not found');
+    }else{
+      await deleteEvent(id);
+      res.status(204).send();
+    }
   }catch(error){
-    console.error('Error deleting event:', error);
     res.status(500).send('Internal Server Error');
   }
    

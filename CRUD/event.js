@@ -18,6 +18,7 @@ async function getEvent(id){
             id: id
            }
     });
+    console.log("get event is called");
     return event
 }
 

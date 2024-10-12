@@ -96,7 +96,7 @@ router.get('/donors', async (req, res) => {
       const id = req.params.id;
       const donor = await getDonorById(id);
       if(donor==null){
-            res.status(404).send('Donor not found');
+        res.status(404).send('Donor not found');
       }else{
         await deleteDonor(id);
         res.status(204).send();
