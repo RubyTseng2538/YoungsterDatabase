@@ -138,13 +138,26 @@ async function manualSendReceipt(transactionID){
 
 
 //read
-async function getTransaction(id){
+async function getTransaction(id) {
     const transaction = await prisma.transaction.findUnique({
-        where:{
-            id: id
-           }
+        where: {
+            id: id,
+        },
+        include: {
+            donor: true,
+            event: true,
+        }
     });
-    return transaction
+
+    if (!transaction) {
+        throw new Error(`Transaction with id ${id} not found`);
+    }
+
+    return {
+        ...transaction,
+        donorName: transaction.donor.name,
+        eventName: transaction.event.eventName,
+    };
 }
 
 async function getDynamicFilteredTransactions(filters, pageNumber = 1, take = 10) {
@@ -155,10 +168,17 @@ async function getDynamicFilteredTransactions(filters, pageNumber = 1, take = 10
         orderBy: {
             entryDate: 'desc',
         },
+        include: {
+            donor: true,
+            event: true,
+        },
     });
-    return transactions;
+    return transactions.map(transaction => ({
+        ...transaction,
+        donorName: transaction.donor.name,
+        eventName: transaction.event.eventName,
+    }));
 }
-
 
 async function getAllTransactions(pageNumber = 1, take = 10) {
     const transactions = await prisma.transaction.findMany({
@@ -167,8 +187,16 @@ async function getAllTransactions(pageNumber = 1, take = 10) {
         orderBy: {
             entryDate: 'desc',
         },
+        include: {
+            donor: true,
+            event: true,
+        },
     });
-    return transactions;
+    return transactions.map(transaction => ({
+        ...transaction,
+        donorName: transaction.donor.name,
+        eventName: transaction.event.eventName,
+    }));
 }
 
 

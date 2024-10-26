@@ -83,9 +83,9 @@ const transactionMiddleware = (req,res,next) => {
 }
 
 router.get('/transaction', async (req,res)=>{
-  try{
+  // try{
   let filter = {};  
-  const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status} = req.query;
+  const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status, receipt} = req.query;
     console.log(req.query);
     if(EntryDateOne&&EntryDateTwo&&validateDate2(EntryDateOne)&&validateDate2(EntryDateTwo)){
       filter.entryDate= {gte: EntryDateOne, lte: EntryDateTwo};
@@ -101,22 +101,24 @@ router.get('/transaction', async (req,res)=>{
       filter.transactionType= convertStringToTransactionType(transactionType);
     }if(status&&convertStringToStatus(status)){
       filter.status= convertStringToStatus(status);
+    }if(receipt){
+      filter.receiptID= {not: null};
     }
     if(filter.length == 0){
       res.send(await getAllTransactions());
     }else{
       res.send(await getDynamicFilteredTransactions(filter));
     }
-  }catch(e){
-    res.status(500).send('Internal Server Error');
-  }
+  // }catch(e){
+  //   res.status(500).send('Internal Server Error');
+  // }
  })
 
  //get filter id
  router.get('/transaction/:id', transactionMiddleware,async(req,res)=>{
   try{
     const id = req.params.id;
-    res.json(await getTransaction(id))
+    res.json(await getTransaction(id));
   }catch(e){
     res.status(500).send('Internal Server Error');
   }

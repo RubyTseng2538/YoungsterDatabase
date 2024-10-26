@@ -18,8 +18,14 @@ async function isAuthenticated(req, res, next) {
         if (!token) {
             return res.status(401).send('Token missing');
         }
+        if (process.env.APP_ENV === 'dev') {
+            req.user = {
+                id: '123',
+                email: 'rubytseng54@gmail.com'
+            }
+            next();
+        }else{
 
-        // Verify the token
         const ticket = await oauth2Client.verifyIdToken({
             idToken: token,
             audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
@@ -34,10 +40,9 @@ async function isAuthenticated(req, res, next) {
             id: userid,
             email: payload['email']
         }
-
         // Proceed to the next middleware or route handler
         next();
-    } catch (error) {
+    }} catch (error) {
         console.error('Error during token verification:', error);
         res.status(401).send('Invalid token');
     }
@@ -48,6 +53,7 @@ async function checkUserInSystem(req, res, next) {
         const user = req.user;
         console.log(user.id);
         console.log(user.email); 
+       // at the end , re.user should = db.user
         let userInSystem = await getUserById(user.id);
         if(!userInSystem){
             userInSystem = await getUserByEmail(user.email);
