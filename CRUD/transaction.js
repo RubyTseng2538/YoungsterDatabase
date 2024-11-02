@@ -179,6 +179,30 @@ async function getDynamicFilteredTransactions(filters, pageNumber = 1, take = 10
         eventName: transaction.event.eventName,
     }));
 }
+async function getActiveTransactions(pageNumber = 1, take = 10) {
+    const transactions = await prisma.transaction.findMany({
+        skip: (pageNumber - 1) * take,
+        take: take,
+        orderBy: {
+            entryDate: 'desc',
+        },
+        where: {
+            status: {
+                in: [Status.COMPLETED, Status.PENDING]
+            },
+        },
+        include: {
+            donor: true,
+            event: true,
+        },
+    });
+    return transactions.map(transaction => ({
+        ...transaction,
+        donorName: transaction.donor.name,
+        eventName: transaction.event.eventName,
+    }));
+}
+
 
 async function getAllTransactions(pageNumber = 1, take = 10) {
     const transactions = await prisma.transaction.findMany({
@@ -231,7 +255,8 @@ module.exports ={
     getDynamicFilteredTransactions, 
     manualSendReceipt,
     editTransaction,
-    deleteTransaction
+    deleteTransaction,
+    getActiveTransactions
 }
 
 

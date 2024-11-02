@@ -4,7 +4,7 @@ const router = new Router();
 const {PaymentMethod, TransactionType, Status} = require("@prisma/client");
 
 const { getDonorById } = require('../CRUD/donor');
-const { getTransaction, createTransaction, getAllTransactions, manualSendReceipt, editTransaction, getDynamicFilteredTransactions } = require('../CRUD/transaction');
+const { getTransaction, createTransaction, getAllTransactions, manualSendReceipt, editTransaction, getDynamicFilteredTransactions, getActiveTransactions } = require('../CRUD/transaction');
 const { getReceipt, getReceiptsByString, getAllReceipts, createOrUpdateReceipt } = require('../CRUD/transactionReceipt');
 const { checkPermissionLevel } = require('./APIAuthorization');
 
@@ -85,11 +85,12 @@ const transactionMiddleware = (req,res,next) => {
 router.get('/transaction', async (req,res)=>{
   // try{
   let filter = {};  
-  const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status, receipt} = req.query;
+  const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status, receipt, all} = req.query;
     console.log(req.query);
-    if(EntryDateOne&&EntryDateTwo&&validateDate2(EntryDateOne)&&validateDate2(EntryDateTwo)){
+    if(EntryDateOne&&EntryDateTwo&&validateDate(EntryDateOne)&&validateDate(EntryDateTwo)){
       filter.entryDate= {gte: EntryDateOne, lte: EntryDateTwo};
-    }if(TransactionDateOne&&TransactionDateTwo&&validateDate2(TransactionDateOne)&&validateDate2(TransactionDateTwo)){
+      console.log("entry date");
+    }if(TransactionDateOne&&TransactionDateTwo&&validateDate(TransactionDateOne)&&validateDate(TransactionDateTwo)){
       filter.transactionDate= {gte: TransactionDateOne, lte: TransactionDateTwo};
     }if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
       filter.donorID = parseInt(DonorID);
@@ -103,6 +104,8 @@ router.get('/transaction', async (req,res)=>{
       filter.status= convertStringToStatus(status);
     }if(receipt){
       filter.receiptID= {not: null};
+    }if(all){
+      filter.status= {not: Status.VOID};
     }
     if(filter.length == 0){
       res.send(await getAllTransactions());
