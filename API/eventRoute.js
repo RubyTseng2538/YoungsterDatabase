@@ -5,6 +5,7 @@ const router = new Router();
 const { getAllEvents, getEventsByName, getEvent, createEvent, updateEvent, deleteEvent, addAttendees, removeAttendees, getEventsByDateRange, getEventsByDeadlineRange, getEventsByDonor, getEventsByUser, getEventsByNameCoordinator, getEventsByDonorCoordinator, getEventsByDateRangeCoordinator, getEventsByDeadlineRangeCoordinator, getActiveEvents } = require('../CRUD/event');
 const { getDonorById } = require('../CRUD/donor');
 const { checkPermissionLevel, eventCoordinators } = require('./APIAuthorization');
+const { event } = require('jquery');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
 
@@ -97,6 +98,7 @@ router.get('/events' , async (req,res)=>{
       let eventName = data.eventName;
       let eventDate = data.eventDate;
       let eventDeadline = data.eventDeadline;
+      let eventLocation = data.eventLocation;
       let fee = data.fee;
       let eventStatus = data.eventStatus;
 
@@ -108,6 +110,7 @@ router.get('/events' , async (req,res)=>{
               eventDate,
               eventDeadline,
               fee: parseInt(fee),
+              eventLocation,
               eventStatus
           }
           res.json(await createEvent(eventData));
@@ -138,10 +141,11 @@ router.get('/events' , async (req,res)=>{
       }
       if (data.eventLocation) {
           entry["eventLocation"] = data.eventLocation;
-      }if(data.eventStatus && (data.eventStatus=="ACTIVE"||data.eventStatus=="INACTIVE")){
-        entry["eventStatus"]=data.event;
+      }if(data.eventStatus && (data.eventStatus=='true'||data.eventStatus=='false')){
+        console.log(data.eventStatus);
+        entry["eventStatus"]= JSON.parse(data.eventStatus || false);
       }
-      if (!(data.eventDate&&validateDate(data.eventDate)) && !(data.eventDeadline&&validateDate(data.eventDeadline)) && !data.eventLocation && !(data.fee&&isInt(data.fee) )&& !data.eventName) {
+      if (!(data.eventDate&&validateDate(data.eventDate)) && !(data.eventDeadline&&validateDate(data.eventDeadline)) && !data.eventLocation && !(data.fee&&isInt(data.fee) )&& !data.eventName && !data.eventStatus) {
           return res.status(400).send('invalid entry');
       }
 

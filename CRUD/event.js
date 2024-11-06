@@ -153,6 +153,9 @@ async function getActiveEvents(pageNumber = 1, take = 10) {
         },
         skip: (pageNumber-1)*take,
         take: take,
+        orderBy:{
+            eventDate: 'desc'
+        }
     });
     return events;
 }
@@ -161,6 +164,9 @@ async function getAllEvents(pageNumber, take = 10) {
     const events = await prisma.event.findMany({
         skip: (pageNumber - 1) * take,
         take: take,
+        orderBy: {
+            eventDate: 'desc'
+        }
     });
     return events;
 }
