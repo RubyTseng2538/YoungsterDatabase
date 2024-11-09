@@ -178,7 +178,6 @@ router.get('/transaction/sendReceipt/:id', transactionMiddleware, async(req,res)
     let status = convertStringToStatus(data.status);
     let email = data.email;
     let name = data.name;
-    let sendDate = data.sendDate;
     let note = data.note;
     if(!donorID||!transactionDate||!paymentMethod||!validateDate(transactionDate)||!isInt(donorID)||(amount&&isNaN(amount))||(eventID&&!isInt(eventID))||!transactionType||!status){
       res.status(400).send('invalid entry');

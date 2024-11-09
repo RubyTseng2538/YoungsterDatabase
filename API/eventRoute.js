@@ -125,6 +125,7 @@ router.get('/events' , async (req,res)=>{
   try {
       const id = req.params.id;
       let data = req.body;
+      console.log(data);
       let entry = {};
 
       if(data.eventDate&&validateDate(data.eventDate)){
