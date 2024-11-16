@@ -64,8 +64,8 @@ const convertStringToTransactionType = (type)=>{
 const convertStringToStatus = (status)=>{
   if(status == "PENDING"){
     return Status.PENDING;
-  }else if(status == "COMPLETE"){
-    return Status.COMPLETE;
+  }else if(status == "COMPLETED"){
+    return Status.COMPLETED;
   }else if(status == "VOID"){
     return Status.VOID;
   }else{
@@ -84,28 +84,56 @@ const transactionMiddleware = (req,res,next) => {
 
 router.get('/transaction', async (req,res)=>{
   // try{
-  let filter = {};  
+  let filter = {}; 
+  let paymentFilter =[];
+  let statusFilter = [];
   const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status, receipt, all} = req.query;
     console.log(req.query);
+    let paymentList = [];
+    let statusList = [];
+    if(payment){
+      paymentList = payment.split(",");
+      for(let i = 0; i < paymentList.length; i++){
+        paymentList[i]=convertStringToPaymentMethod(paymentList[i]);
+        
+      }
+    }if(status){
+      statusList = status.split(","); 
+      for(let i = 0; i < statusList.length; i++){
+        statusList[i]=convertStringToStatus(statusList[i]);
+        
+      }
+    }
     if(EntryDateOne&&EntryDateTwo&&validateDate(EntryDateOne)&&validateDate(EntryDateTwo)){
       filter.entryDate= {gte: EntryDateOne, lte: EntryDateTwo};
-      console.log("entry date");
     }if(TransactionDateOne&&TransactionDateTwo&&validateDate(TransactionDateOne)&&validateDate(TransactionDateTwo)){
       filter.transactionDate= {gte: TransactionDateOne, lte: TransactionDateTwo};
     }if(DonorID&&isInt(DonorID)&&getDonorById(parseInt(DonorID))){
       filter.donorID = parseInt(DonorID);
     }if(EventID&&isInt(EventID)&&getDonorById(parseInt(EventID))){
       filter.eventID= parseInt(EventID);
-    }if(payment&&convertStringToPaymentMethod(payment)){
-      filter.paymentMethod= convertStringToPaymentMethod(payment);
-    }if(transactionType&&convertStringToTransactionType(transactionType)){
+    }if(paymentList.length > 1){
+      paymentFilter.push(...paymentList.map(payment => ({ paymentMethod: payment })));
+    }else if(paymentList.length == 1){
+      filter.paymentMethod = paymentList[0];
+    }
+    if(transactionType&&convertStringToTransactionType(transactionType)){
       filter.transactionType= convertStringToTransactionType(transactionType);
-    }if(status&&convertStringToStatus(status)){
-      filter.status= convertStringToStatus(status);
+    }if(statusList.length > 1){
+      statusFilter.push(...statusList.map(status => ({ status: status })));
+    }else if(statusList.length == 1){
+      filter.status = statusList[0];
     }if(receipt){
       filter.receiptID= {not: null};
     }if(all){
       filter.status= {not: Status.VOID};
+    }if(paymentFilter.length > 1 && statusFilter.length > 1){
+      filter.AND = [{OR: paymentFilter},{OR: statusFilter}];
+      console.log("and")
+    }else if(paymentFilter.length > 1){
+      filter.OR = paymentFilter;
+    }else if(statusFilter.length > 1){
+      filter.OR = statusFilter;
     }
     if(filter.length == 0){
       res.send(await getAllTransactions());

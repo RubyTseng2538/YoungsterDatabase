@@ -227,7 +227,7 @@ async function getAllTransactions(pageNumber = 1, take = 10) {
 //update
 //can only update transaction status
 async function editTransaction(id, data){
-    const event = await prisma.event.update({
+    const event = await prisma.transaction.update({
         where:{
             id: id
         },
