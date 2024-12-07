@@ -6,6 +6,7 @@ const {PaymentMethod, TransactionType, Status} = require("@prisma/client");
 const { getDonorById } = require('../CRUD/donor');
 const { getTransaction, createTransaction, getAllTransactions, manualSendReceipt, editTransaction, getDynamicFilteredTransactions, getActiveTransactions } = require('../CRUD/transaction');
 const { getReceipt, getReceiptsByString, getAllReceipts, createOrUpdateReceipt } = require('../CRUD/transactionReceipt');
+const { turnOnAndOffConfig } = require('../CRUD/receiptConfig');
 const { checkPermissionLevel } = require('./APIAuthorization');
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
@@ -87,10 +88,12 @@ router.get('/transaction', async (req,res)=>{
   let filter = {}; 
   let paymentFilter =[];
   let statusFilter = [];
+  let transactionTypeFilter = [];
   const {EntryDateOne, EntryDateTwo, TransactionDateOne, TransactionDateTwo, DonorID, EventID, payment, transactionType, status, receipt, all} = req.query;
-    console.log(req.query);
+    // console.log(req.query);
     let paymentList = [];
     let statusList = [];
+    let transactionTypeList = [];
     if(payment){
       paymentList = payment.split(",");
       for(let i = 0; i < paymentList.length; i++){
@@ -101,6 +104,12 @@ router.get('/transaction', async (req,res)=>{
       statusList = status.split(","); 
       for(let i = 0; i < statusList.length; i++){
         statusList[i]=convertStringToStatus(statusList[i]);
+        
+      }
+    }if(transactionType){
+      transactionTypeList = transactionType.split(","); 
+      for(let i = 0; i < transactionTypeList.length; i++){
+        transactionTypeList[i]=convertStringToTransactionType(transactionTypeList[i]);
         
       }
     }
@@ -117,9 +126,12 @@ router.get('/transaction', async (req,res)=>{
     }else if(paymentList.length == 1){
       filter.paymentMethod = paymentList[0];
     }
-    if(transactionType&&convertStringToTransactionType(transactionType)){
-      filter.transactionType= convertStringToTransactionType(transactionType);
-    }if(statusList.length > 1){
+    if(transactionTypeList.length > 1){
+      transactionTypeFilter.push(...transactionTypeList.map(type => ({ transactionType: type })));
+    }else if(transactionTypeList.length == 1){
+      filter.transactionType = transactionTypeList[0];
+    }
+    if(statusList.length > 1){
       statusFilter.push(...statusList.map(status => ({ status: status })));
     }else if(statusList.length == 1){
       filter.status = statusList[0];
@@ -127,13 +139,21 @@ router.get('/transaction', async (req,res)=>{
       filter.receiptID= {not: null};
     }if(all){
       filter.status= {not: Status.VOID};
-    }if(paymentFilter.length > 1 && statusFilter.length > 1){
+    }if(paymentFilter.length > 1 && statusFilter.length > 1 && transactionTypeFilter.length > 1){
+      filter.AND = [{OR: paymentFilter},{OR: statusFilter}, {OR: transactionTypeFilter}];
+    }else if(paymentFilter.length > 1 && statusFilter.length > 1){
       filter.AND = [{OR: paymentFilter},{OR: statusFilter}];
-      console.log("and")
-    }else if(paymentFilter.length > 1){
+    }else if(paymentFilter.length > 1 && transactionTypeFilter.length > 1){
+      filter.AND = [{OR: paymentFilter},{OR: transactionTypeFilter}];
+    }else if(statusFilter.length > 1 && transactionTypeFilter.length > 1){
+      filter.AND = [{OR: statusFilter},{OR: transactionTypeFilter}];
+    }
+    else if(paymentFilter.length > 1){
       filter.OR = paymentFilter;
     }else if(statusFilter.length > 1){
       filter.OR = statusFilter;
+    }else if(transactionTypeFilter.length > 1){
+      filter.OR = transactionTypeFilter;
     }
     if(filter.length == 0){
       res.send(await getAllTransactions());
@@ -300,4 +320,19 @@ router.post('/transaction/createOrUpdate/:id', transactionMiddleware, urlencoded
     res.status(500).send('Internal Server Error');
   }
  })
+
+ router.put('/transaction/receiptConfig', urlencodedParser, async(req,res)=>{
+  // try{
+      const {status} = req.body;
+      console.log(req.user.id, status);
+      if(req.user.id){
+        res.json(await turnOnAndOffConfig(req.user.id, JSON.parse(status || false)));
+      }else{
+        res.status(400).send('invalid entry');
+      }
+    // }catch(e){
+    //   res.status(500).send('Internal Server Error');
+    // }
+})
+
 module.exports=router;

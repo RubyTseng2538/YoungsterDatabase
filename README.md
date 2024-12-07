@@ -18,5 +18,5 @@ As the full-stack developer, I was responsible for:
 Technologies Utilized
 
     Backend: Node.js, Express.js
-    Database: PostgreSQL, Prisma, Supabase
+    Database: PostgreSQL, Prisma, Supabase 
     Additional Tools: Git for version control, Agile methodologies for development workflow, SendGrid for email services.

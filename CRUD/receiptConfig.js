@@ -94,6 +94,30 @@ async function getTransactionIDByConfig(config){
     return transaction;
 }
 
+async function turnOnAndOffConfig(userID, status){
+    return prisma.$transaction(async (tx) => {
+    const prefix = await tx.receiptConfig.findMany({
+        where: {
+            user: {
+                some:{GoogleId: userID}
+            }
+        }});
+    if(prefix){
+        console.log(prefix[0].prefix); 
+        const config = await tx.receiptConfig.update({
+            where: {
+                prefix: prefix[0].prefix
+            },
+            data: {
+                autosend: status
+            }
+        });
+        return config;
+    }else{
+        return null;
+    }
+    });
+}
 
 module.exports = {
     createConfig,
@@ -102,5 +126,6 @@ module.exports = {
     getConfigByPrefix,
     getConfigByUser,
     getConfigStringByUser,
-    getTransactionIDByConfig
+    getTransactionIDByConfig,
+    turnOnAndOffConfig
 };

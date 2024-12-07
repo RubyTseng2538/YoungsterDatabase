@@ -14,7 +14,6 @@ async function isAuthenticated(req, res, next) {
         // Extract the token from the cookie
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
-        console.log(token);
         if (!token) {
             return res.status(401).send('Token missing');
         }
@@ -32,9 +31,7 @@ async function isAuthenticated(req, res, next) {
         });
 
         const payload = ticket.getPayload();
-        console.log(payload);
         const userid = payload['sub'];
-        console.log('User ID:', userid);
 
         req.user = {
             id: userid,
@@ -51,8 +48,6 @@ async function isAuthenticated(req, res, next) {
 async function checkUserInSystem(req, res, next) {
     try {
         const user = req.user;
-        console.log(user.id);
-        console.log(user.email); 
        // at the end , re.user should = db.user
         let userInSystem = await getUserById(user.id);
         if(!userInSystem){
