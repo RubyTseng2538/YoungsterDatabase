@@ -1,22 +1,25 @@
 const { PrismaClient } = require("@prisma/client");
-
 const prisma = new PrismaClient();
 
 //create
-async function createUser(id, email, name, roles) {
+async function createUser(data) {
     const user = await prisma.user.create({
-      data: {
-        id: id,
-        email: email,
-        name: name,
-        roles: roles
-      },
+      data: data
     });
     return user;
 }
 
 //read
 async function getUserById(id){
+    const user = await prisma.user.findUnique({
+        where:{
+            id: id
+           }
+    });
+    return user
+}
+
+async function getUserByGoogleId(id){
     const user = await prisma.user.findUnique({
         where:{
             GoogleId: id

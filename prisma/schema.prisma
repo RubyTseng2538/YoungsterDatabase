@@ -19,6 +19,7 @@ model User{
   GoogleId         String?       @unique
   name             String
   email            String        @unique
+  password         String?
   receiptConfig    ReceiptConfig @relation(fields: [receiptPrefix], references: [prefix])
   receiptPrefix    String
   eventsInCharge   Event[]

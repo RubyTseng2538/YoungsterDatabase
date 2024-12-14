@@ -1,12 +1,15 @@
-const jwt = require('jsonwebtoken');
+
 const {OAuth2Client} = require('google-auth-library');
 const { updateUser, getUserById, getUserByEmail } = require('../CRUD/user');
+
+const jwt = require('jsonwebtoken');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 
 const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
 
 async function isAuthenticated(req, res, next) {
     // Extract the token from the Authorization header
@@ -15,6 +18,7 @@ async function isAuthenticated(req, res, next) {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
         if (!token) {
+            console.log('Token missing');
             return res.status(401).send('Token missing');
         }
         if (process.env.APP_ENV === 'dev') {
@@ -23,7 +27,13 @@ async function isAuthenticated(req, res, next) {
                 email: 'rubytseng54@gmail.com'
             }
             next();
-        }else{
+        }else if(process.env.APP_ENV === 'test'){
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = decoded;
+            next();
+        }
+        
+        else{
 
         const ticket = await oauth2Client.verifyIdToken({
             idToken: token,
@@ -67,6 +77,7 @@ async function checkUserInSystem(req, res, next) {
         res.status(401).send('User not in the system');
     }
 }
+
 
 module.exports = { isAuthenticated, checkUserInSystem };
 

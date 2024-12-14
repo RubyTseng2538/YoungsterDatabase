@@ -27,7 +27,7 @@ async function createTransaction(userID, transactionData, donor, event, receiptD
                 entryDate: new Date(),
                 transactionDate: transactionData.transactionDate,
                 donor: { connect: { id: donor } },
-                createdBy: { connect: { GoogleId: userID } },
+                createdBy: { connect: { id: userID } },
                 event: { connect: { id: event } },
                 paymentMethod: transactionData.paymentMethod,
                 amount: transactionData.amount,

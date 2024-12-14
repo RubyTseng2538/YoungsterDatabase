@@ -2,9 +2,11 @@ const express = require('express');
 const donorRoutes = require('./API/donorRoute');
 const eventRoutes = require('./API/eventRoute');
 const transactionRoutes = require('./API/transactionRoute');
+const authRoutes = require('./API/AuthRoute');
 
 
 const { isAuthenticated, checkUserInSystem} = require('./API/APIAuthentication');
+const { auth } = require('google-auth-library');
 // Step 1: Import express-session
 
 
@@ -19,6 +21,8 @@ app.use(function(req, res, next) {
   });
 
 // Note: Make sure the above code is placed before your routes that require authentication.
+
+app.use('/auth', [authRoutes]);
 
 app.use(isAuthenticated);
 app.use(checkUserInSystem);

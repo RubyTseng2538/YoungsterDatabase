@@ -52,6 +52,15 @@ async function assignConfig(prefix, userID){
 }
 
 //get config
+async function getConfig(prefix){
+    const config = await prisma.receiptConfig.findUnique({
+        where: {
+            prefix: prefix
+        }
+    });
+    return config;
+}
+
 async function getConfigByPrefix(prefix) {
     const config = await prisma.receiptConfig.findUnique({
         where: {
@@ -66,7 +75,7 @@ async function getConfigStringByUser(userID){
     const config = await prisma.receiptConfig.findMany({
         where: {
             user: {
-                some:{GoogleId: userID}
+                some:{id: userID}
             }
         }
     });
@@ -94,12 +103,12 @@ async function getTransactionIDByConfig(config){
     return transaction;
 }
 
-async function turnOnAndOffConfig(userID, status){
+async function turnOnAndOffConfig(id, status){
     return prisma.$transaction(async (tx) => {
     const prefix = await tx.receiptConfig.findMany({
         where: {
             user: {
-                some:{GoogleId: userID}
+                some:{id: id}
             }
         }});
     if(prefix){
@@ -127,5 +136,6 @@ module.exports = {
     getConfigByUser,
     getConfigStringByUser,
     getTransactionIDByConfig,
-    turnOnAndOffConfig
+    turnOnAndOffConfig,
+    getConfig
 };
